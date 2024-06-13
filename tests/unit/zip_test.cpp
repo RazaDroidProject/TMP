@@ -64,7 +64,7 @@ TEST(ZipTest, ExtractPackageRecursive) {
 }
 
 TEST(ZipTest, OpenFromMemory) {
-  std::string zip_path = from_testdata_base("ziptest_fake-update.zip");
+  std::string zip_path = from_testdata_base("ziptest_dummy-update.zip");
   MemMapping map;
   ASSERT_TRUE(map.MapFile(zip_path));
 

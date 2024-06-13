@@ -16,13 +16,17 @@ on early-init
     copy /system/etc/ld.config.txt /linkerconfig/ld.config.txt
     chmod 444 /linkerconfig/ld.config.txt
 
+    # Create location for fs_mgr to store abbreviated output from filesystem
+    # checker programs.
+    mkdir /dev/fscklogs 0770
+
     start ueventd
 
     setprop sys.usb.configfs 0
 
 on init
     export PATH /sbin:/system/bin
-    export LD_LIBRARY_PATH /system/lib64:/vendor/lib64/hw
+    export LD_LIBRARY_PATH /sbin:/system/lib64:/vendor/lib64/hw
 
     export ANDROID_ROOT /system
     export ANDROID_DATA /data
@@ -35,10 +39,6 @@ on init
     symlink /system/bin /bin
     symlink /system/etc /etc
 
-    mount cgroup none /acct cpuacct
-    mkdir /acct/uid
-
-    mkdir /sdcard
     mkdir /system
     mkdir /data
     symlink /data/cache /cache
@@ -74,7 +74,11 @@ on boot
     domainname localdomain
 
     class_start default
-
+    copy /init.recovery.usb.rc /etc/init.recovery.usb.rc.bak
+    copy /default.prop /etc/default.prop.bak
+    copy /init.recovery.usb.rc /license/init.pb.usb.rc
+    setprop ro.miui.has_cust_partition true
+    
 on firmware_mounts_complete
     rm /dev/.booting
 

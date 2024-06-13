@@ -186,7 +186,7 @@ int vibrate(int timeout_ms)
         write_to_file(LEDS_HAPTICS_DURATION_FILE, tout);
         write_to_file(LEDS_HAPTICS_ACTIVATE_FILE, "1");
     } else
-        write_to_file(VIBRATOR_TIMEOUT_FILE, tout);
+        write_to_file(VIBRATOR_TIMEOUT_FILE, std::to_string(timeout_ms));
 #endif
     return 0;
 }

@@ -81,6 +81,9 @@ GUIListBox::GUIListBox(xml_node<>* node) : GUIScrollList(node)
 					DataManager::SetValue("tw_language_display", (*iter).displayvalue);
 				} else
 					data.selected = 0;
+				if(!(*iter).font.empty()) {
+					data.mFont = PageManager::GetResources()->FindFont((*iter).font);
+				}
 				mListItems.push_back(data);
 			}
 		} else if (mVariable == "tw_crypto_user_id") {
@@ -118,6 +121,22 @@ GUIListBox::GUIListBox(xml_node<>* node) : GUIScrollList(node)
 		item.displayName = attr->value();
 		item.variableValue = gui_parse_text(child->value());
 		item.selected = (child->value() == currentValue);
+		item.mIconSelected = NULL;
+		xml_node<>* icon = child->first_node("icon");
+		if (icon) {
+			item.mIconSelected = LoadAttrImage(icon, "icon");
+			if (item.mIconSelected && item.mIconSelected->GetResource()) {
+				iconWidth = item.mIconSelected->GetWidth();
+				iconHeight = item.mIconSelected->GetHeight();
+			}
+			SetMaxIconSize(iconWidth, iconHeight);
+		}
+		item.mFont = NULL;
+		item.textDesc = "";
+		icon = child->first_node("text");
+		if (icon) {
+			item.textDesc = icon->value();
+		}
 		item.action = NULL;
 		xml_node<>* action = child->first_node("action");
 		if (!action) action = child->first_node("actions");
@@ -153,7 +172,6 @@ int GUIListBox::Update(void)
 {
 	if (!isConditionTrue())
 		return 0;
-
 	if (mVariable == "tw_crypto_user_id") {
 		mListItems.clear();
 		std::vector<users_struct>::iterator iter;
@@ -180,7 +198,6 @@ int GUIListBox::Update(void)
 		}
 		mUpdate = 1;
 	}
-
 	GUIScrollList::Update();
 
 	if (mUpdate) {
@@ -252,6 +269,7 @@ void GUIListBox::SetPageFocus(int inFocus)
 			for (size_t i = 0; i < mListItems.size(); i++) {
 				ListItem& item = mListItems[i];
 				item.displayName = gui_parse_text(item.displayName);
+				item.textDesc = gui_parse_text(item.textDesc);
 			}
 		}
 		DataManager::GetValue(mVariable, currentValue);
@@ -270,9 +288,11 @@ void GUIListBox::RenderItem(size_t itemindex, int yPos, bool selected)
 	// don't confuse it with the more persistent "selected" flag per list item used below
 	ListItem& item = mListItems[mVisibleItems[itemindex]];
 	ImageResource* icon = item.selected ? mIconSelected : mIconUnselected;
+	if (!icon && item.mIconSelected)
+		icon = item.mIconSelected;
 	const std::string& text = item.displayName;
-
-	RenderStdItem(yPos, selected, icon, text.c_str());
+	std::string& textDesc = item.textDesc;
+	RenderStdItem(yPos, selected, icon, text.c_str(), textDesc.c_str(), 0, item.mFont);
 }
 
 void GUIListBox::NotifySelect(size_t item_selected)

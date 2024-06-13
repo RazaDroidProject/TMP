@@ -2,6 +2,9 @@
 	Copyright 2012 bigbiff/Dees_Troy TeamWin
 	This file is part of TWRP/TeamWin Recovery Project.
 
+	Copyright 2018 ATG Droid  
+	This file is part of RWRP/RedWolf Recovery Project
+
 	TWRP is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
 	the Free Software Foundation, either version 3 of the License, or
@@ -59,16 +62,17 @@ public:
 	static string Get_Root_Path(const string& Path);                            // Trims any trailing folders or filenames from the path, also adds a leading / if not present
 	static string Get_Path(const string& Path);                                 // Trims everything after the last / in the string
 	static string Get_Filename(const string& Path);                             // Trims the path off of a filename
+	static string Get_output(const string& cmd);
 
-	static int Exec_Cmd(const string& cmd, string &result, bool combine_stderr);     //execute a command and return the result as a string by reference, set combined_stderror to add stderr
-	static int Exec_Cmd(const string& cmd, bool Show_Errors = true);            //execute a command, displays an error to the GUI if Show_Errors is true, Show_Errors is true by default
-	static int Wait_For_Child(pid_t pid, int *status, string Child_Name, bool Show_Errors = true); // Waits for pid to exit and checks exit status, displays an error to the GUI if Show_Errors is true which is the default
+	static int Exec_Cmd(const string& cmd, string &result, bool combine_stderr = false);                     //execute a command and return the result as a string by reference, set combined_stderror to add stderr
+	static int Exec_Cmd(const string& cmd, bool Show_Errors = true, bool retn = false); //execute a command, displays an error to the GUI if Show_Errors is true, Show_Errors is true by default, also return exit code when required
+	static int Wait_For_Child(pid_t pid, int *status, string Child_Name, bool Show_Errors = true, bool retn = false); // Waits for pid to exit and checks exit status, displays an error to the GUI if Show_Errors is true which is the default, also return exitcode if required
 	static int Wait_For_Child_Timeout(pid_t pid, int *status, const string& Child_Name, int timeout); // Waits for a pid to exit until the timeout is hit. If timeout is hit, kill the chilld.
 	static bool Path_Exists(string Path);                                       // Returns true if the path exists
 	static Archive_Type Get_File_Type(string fn);                               // Determines file type, 0 for unknown, 1 for gzip, 2 for OAES encrypted
 	static int Try_Decrypting_File(string fn, string password); // -1 for some error, 0 for failed to decrypt, 1 for decrypted, 3 for decrypted and found gzip format
 	static unsigned long Get_File_Size(const string& Path);                     // Returns the size of a file
-	static std::string Remove_Beginning_Slash(const std::string& path);         // Remove the beginning slash of a path
+	static std::string Remove_Beginning_Slash(const std::string& path);        // Remove the beginning slash of a path
 	static std::string Remove_Trailing_Slashes(const std::string& path, bool leaveLast = false); // Normalizes the path, e.g /data//media/ -> /data/media
 	static void Strip_Quotes(char* &str);                                       // Remove leading & trailing double-quotes from a string
 	static vector<string> split_string(const string &in, char del, bool skip_empty);
@@ -77,6 +81,14 @@ public:
 	static bool Wait_For_File(const string& path, std::chrono::nanoseconds timeout); // Wait For File, True is success, False is timeout;
 
 #ifndef BUILD_TWRPTAR_MAIN
+	static void Replace_Word_In_File(string file_path, string search); // Remove string from file
+	static void Replace_Word_In_File(string file_path, string search, string word); // Replace string in file
+	static bool Repack_Image(string mount_point, bool part = true);
+	static bool Unpack_Repack_ramdisk(bool repack);
+	static bool Unpack_Image(string mount_point, bool part = true);
+	static bool Symlink(string src, string dest);
+	static void Read_Write_Specific_Partition(string path, string partition_name, bool backup);
+
 	static int Recursive_Mkdir(string Path);                                    // Recursively makes the entire path
 	static void GUI_Operation_Text(string Read_Value, string Default_Text);     // Updates text for display in the GUI, e.g. Backing up %partition name%
 	static void GUI_Operation_Text(string Read_Value, string Partition_Name, string Default_Text); // Same as above but includes partition name
@@ -92,9 +104,12 @@ public:
 	static int read_file(string fn, uint64_t& results); //read from file
 	static bool write_to_file(const string& fn, const string& line);              //write single line to file with no newline
 	static bool write_to_file(const string& fn, const std::vector<string> lines); // write vector of strings line by line with newlines
+	static void remove_word_from_file(string file_path, string search, string word);   // Remove selected word from the file
+	static bool CheckWord(std::string filename, std::string search); // Check if the word exist in the txt file and then return true or false
 	static bool Try_Decrypting_Backup(string Restore_Path, string Password); // true for success, false for failed to decrypt
 	static string System_Property_Get(string Prop_Name);                // Returns value of Prop_Name from reading /system/build.prop
-	static string Partition_Property_Get(string Prop_Name, TWPartitionManager &PartitionManager, string Mount_Point, string prop_file_name);     // Returns value of Prop_Name from reading provided prop file
+	static string Partition_Property_Get(string Prop_Name, TWPartitionManager &PartitionManager, string Mount_Point, string prop_file_name);		// Returns value of Prop_Name from reading provided prop file
+	static string File_Property_Get(string File_Path, string Prop_Name);                // Returns specified property value from the file
 	static string Get_Current_Date(void);                               // Returns the current date in ccyy-m-dd--hh-nn-ss format
 	static void Auto_Generate_Backup_Name();                            // Populates TW_BACKUP_NAME with a backup name based on current date and ro.build.display.id from /system/build.prop
 	static void Fixup_Time_On_Boot(const string& time_paths = ""); // Fixes time on devices which need it (time_paths is a space separated list of paths to check for ats_* files)
@@ -106,27 +121,39 @@ public:
 	static void SetPerformanceMode(bool mode); // support recovery.perf.mode
 	static void Disable_Stock_Recovery_Replace(); // Disable stock ROMs from replacing TWRP with stock recovery
 	static unsigned long long IOCTL_Get_Block_Size(const char* block_device);
+	static void copy_logcat_log(string curr_storage); // Copy Logcat Log to Current Storage (PSTORE/KMSG)
 	static void copy_kernel_log(string curr_storage); // Copy Kernel Log to Current Storage (PSTORE/KMSG)
-	static void copy_logcat(string curr_storage); // Copy Logcat to Current Storage
+	static void create_fingerprint_file(string file_path, string fingerprint); // Create new file and write in to it loaded fingerprintPSTORE/KMSG)
+	static bool Verify_Incremental_Package(string fingerprint, string metadatafp, string metadatadevice); // Verify if the Incremental Package is compatible with the ROM
+	static bool Verify_Loaded_OTA_Signature(std::string loadedfp, std::string ota_folder); // Verify loaded fingerprint from our OTA folder
 	static bool isNumber(string strtocheck); // return true if number, false if not a number
 	static int stream_adb_backup(string &Restore_Name); // Tell ADB Backup to Stream to TWRP from GUI selection
 	static std::string get_log_dir(); // return recovery log storage directory
 	static void check_selinux_support(); // print whether selinux support is enabled to console
-	static bool Is_TWRP_App_In_System(); // Check if the TWRP app is installed in the system partition
-	static void checkforapp();
+	static bool check_system_root(); // return whether device is system-as-root or not
+	static int check_encrypt_status(); // return 1,2,3,0 on FDE, FBE, On some confusion & unencryptred respectively
 	static int Property_Override(string Prop_Name, string Prop_Value); // Override properties (including ro. properties)
+	static std::string getprop(std::string arg); //set the arg value to PB_PROP_VALUE
 	static int Delete_Property(string Prop_Name); // Delete properties (non-persistent properties only)
 	static void List_Mounts(); // List current mounts by the kernel
 	static void Clear_Bootloader_Message(); // Removes the bootloader message from misc for next boot
 	static string Check_For_TwrpFolder(); // Gets user defined path on storage where backups should be stored
-	static bool Check_Xml_Format(const std::string filename); // Return whether a xml is in plain xml or ABX format
 	static bool Find_Fstab(string &fstab);
 	static bool Get_Service_From_Manifest(std::string basepath, std::string service, std::string &ret);
-
+	static bool Check_Xml_Format(const std::string filename); // Return whether a xml is in plain xml or ABX format
 	static bool abx_to_xml(const std::string path, std::string &result); // could we convert abx to xml (if so, return the full path to the converted file)
+
 private:
 	static void Copy_Log(string Source, string Destination);
+    static string Load_File(string extension);
+    static void Set_New_Ramdisk_Property(string prop, bool enable);
 
+};
+
+class PBFunc
+{
+public:
+	static int patchAVB(const char *image);
 };
 
 extern int Log_Offset;

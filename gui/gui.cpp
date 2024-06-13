@@ -220,10 +220,10 @@ bool InputHandler::processInput(int timeout_ms)
 void InputHandler::processHoldAndRepeat()
 {
 	HardwareKeyboard *kb = PageManager::GetHardwareKeyboard();
-
 	// touch and key repeat section
 	struct timeval curTime;
 	gettimeofday(&curTime, NULL);
+	mime = 0;
 	long seconds = curTime.tv_sec - touchStart.tv_sec;
 	long useconds = curTime.tv_usec - touchStart.tv_usec;
 	long mtime = ((seconds) * 1000 + useconds / 1000.0) + 0.5;
@@ -243,7 +243,8 @@ void InputHandler::processHoldAndRepeat()
 	}
 	else if (key_status == KS_KEY_PRESSED && mtime > key_hold_ms)
 	{
-		LOGEVENT("KEY_HOLD: %d,%d\n", x, y);
+		LOGEVENT("KEY_HOLD: %ld\n", mtime);
+		mime = mtime;
 		gettimeofday(&touchStart, NULL);
 		key_status = KS_KEY_REPEAT;
 		kb->KeyRepeat();
@@ -252,6 +253,7 @@ void InputHandler::processHoldAndRepeat()
 	{
 		LOGEVENT("KEY_REPEAT: %d,%d\n", x, y);
 		gettimeofday(&touchStart, NULL);
+		mime = mtime;
 		kb->KeyRepeat();
 	}
 }
@@ -346,8 +348,7 @@ void InputHandler::process_EV_KEY(input_event& ev)
 			return;
 		}
 #endif
-		if (kb->KeyDown(ev.code)) {
-			// Key repeat is enabled for this key
+		if (kb->KeyDown(ev.code) >= 0) {
 			key_status = KS_KEY_PRESSED;
 			touch_status = TS_NONE;
 			gettimeofday(&touchStart, NULL);
@@ -357,7 +358,8 @@ void InputHandler::process_EV_KEY(input_event& ev)
 		}
 	} else {
 		// This is a key release
-		kb->KeyUp(ev.code);
+		if (mime <= key_hold_ms)
+			kb->KeyUp(ev.code);
 		key_status = KS_NONE;
 		touch_status = TS_NONE;
 #ifdef TW_USE_KEY_CODE_TOUCH_SYNC
@@ -502,6 +504,7 @@ static void ors_command_read()
 				DataManager::SetValue("tw_action_text1", gui_lookup("running_recovery_commands", "Running Recovery Commands"));
 				DataManager::SetValue("tw_action_text2", "");
 				gui_changePage("singleaction_page");
+				DataManager::SetValue("pb_current_page", currentPage);
 				// now immediately return to the GUI main loop (the action runs in the background thread)
 				// put all things that need to be done after the command is finished into ors_command_done, not here
 			}
@@ -804,7 +807,7 @@ extern "C" int gui_loadResources(void)
 	{
 		std::string theme_path;
 
-		theme_path = DataManager::GetCurrentStoragePath();
+		theme_path = DataManager::GetSettingsStoragePath();
 		if (!PartitionManager.Mount_Settings_Storage(false))
 		{
 			int retry_count = 5;
@@ -821,7 +824,7 @@ extern "C" int gui_loadResources(void)
 			}
 		}
 
-		theme_path += TWFunc::Check_For_TwrpFolder() + "/theme/ui.zip";
+		theme_path += "/PBRP/theme/ui.zip";
 		if (check || PageManager::LoadPackage("TWRP", theme_path, "main"))
 		{
 #endif // ifndef TW_OEM_BUILD
@@ -854,8 +857,8 @@ extern "C" int gui_loadCustomResources(void)
 		return -1;
 	}
 
-	std::string theme_path = DataManager::GetCurrentStoragePath();
-	theme_path += TWFunc::Check_For_TwrpFolder() + "/theme/ui.zip";
+	std::string theme_path = DataManager::GetSettingsStoragePath();
+	theme_path += "/PBRP/theme/ui.zip";
 	// Check for a custom theme
 	if (TWFunc::Path_Exists(theme_path)) {
 		// There is a custom theme, try to load it

@@ -22,5 +22,5 @@ dest=$1
 shift 1
 for ARG in $*
 do
-    process_file $dest $ARG
+    process_file $dest $(echo $ARG | sed "s:[.]recovery::g")
 done

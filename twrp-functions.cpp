@@ -68,10 +68,17 @@
 extern "C" {
 	#include "libcrecovery/common.h"
 }
-
 #ifdef TW_INCLUDE_LIBRESETPROP
     #include <resetprop.hpp>
 #endif
+
+static const string tmp = "/tmp/pb/";
+static const string ramdisk = tmp + "ramdisk/";
+static const string split_img = tmp + "split_img/";
+static string default_prop = ramdisk + "default.prop";
+static string fstab1 = PartitionManager.Get_Android_Root_Path() + "/vendor/etc";
+static string fstab2 = "/vendor/etc";
+static string dtb = "", ram = "";
 
 struct selabel_handle *selinux_handle;
 
@@ -94,7 +101,7 @@ int TWFunc::Exec_Cmd(const string& cmd, string &result, bool combine_stderr) {
 	return ret;
 }
 
-int TWFunc::Exec_Cmd(const string& cmd, bool Show_Errors) {
+int TWFunc::Exec_Cmd(const string& cmd, bool Show_Errors, bool retn) {
 	pid_t pid;
 	int status;
 	switch(pid = fork())
@@ -108,7 +115,12 @@ int TWFunc::Exec_Cmd(const string& cmd, bool Show_Errors) {
 			break;
 		default:
 		{
-			if (TWFunc::Wait_For_Child(pid, &status, cmd, Show_Errors) != 0)
+			int ret = TWFunc::Wait_For_Child(pid, &status, cmd, Show_Errors, retn);
+
+			if (retn)
+				return ret;
+
+			if (ret != 0)
 				return -1;
 			else
 				return 0;
@@ -138,7 +150,23 @@ string TWFunc::Get_Path(const string& Path) {
 		return Path;
 }
 
-int TWFunc::Wait_For_Child(pid_t pid, int *status, string Child_Name, bool Show_Errors) {
+string TWFunc::Get_output(const string& cmd) {
+	string data;
+	FILE * stream;
+	const int max_buffer = 256;
+	char buffer[max_buffer];
+	string s = cmd + " 2>&1";
+
+	stream = popen(s.c_str(), "r");
+	if (stream) {
+		while (!feof(stream))
+		if (fgets(buffer, max_buffer, stream) != NULL) data.append(buffer);
+			pclose(stream);
+	}
+	return data;
+}
+
+int TWFunc::Wait_For_Child(pid_t pid, int *status, string Child_Name, bool Show_Errors, bool retn) {
 	pid_t rc_pid;
 
 	rc_pid = waitpid(pid, status, 0);
@@ -152,6 +180,9 @@ int TWFunc::Wait_For_Child(pid_t pid, int *status, string Child_Name, bool Show_
 		} else {
 			if (Show_Errors)
 				gui_msg(Msg(msg::kError, "pid_error={1} process ended with ERROR: {2}")(Child_Name)(WEXITSTATUS(*status))); // Graceful exit, but there was an error
+
+			if (retn)
+				return WEXITSTATUS(*status);
 			return -1;
 		}
 	} else { // no PID returned
@@ -500,7 +531,7 @@ void TWFunc::Copy_Log(string Source, string Destination) {
 		if (type == COMPRESSED) {
 			std::string destFileBuffer;
 			std::string getCompressedContents = "pigz -c -d " + Destination;
-			if (Exec_Cmd(getCompressedContents, destFileBuffer, false) < 0) {
+			if (Exec_Cmd(getCompressedContents, destFileBuffer) < 0) {
 				LOGINFO("Unable to get destination logfile contents.\n");
 				return;
 			}
@@ -919,6 +950,29 @@ string TWFunc::Partition_Property_Get(string Prop_Name, TWPartitionManager &Part
 	return propvalue;
 }
 
+string TWFunc::File_Property_Get(string File_Path, string Prop_Name) {
+ std::vector<string> buildprop;
+ string propvalue;
+ string prop_file = File_Path;
+ if (TWFunc::read_file(prop_file, buildprop) != 0) {
+		return propvalue;
+	}
+  int line_count = buildprop.size();
+ int index;
+ size_t start_pos = 0, end_pos;
+ string propname;
+ for (index = 0; index < line_count; index++) {
+  end_pos = buildprop.at(index).find("=", start_pos);
+  propname = buildprop.at(index).substr(start_pos, end_pos);
+  if (propname == Prop_Name) {
+   propvalue = buildprop.at(index).substr(end_pos + 1, buildprop.at(index).size());
+    return propvalue;
+  }
+ }
+ return propvalue;
+}
+
+
 void TWFunc::Auto_Generate_Backup_Name() {
 	string propvalue = System_Property_Get("ro.build.display.id");
 	if (propvalue.empty()) {
@@ -1183,15 +1237,37 @@ std::string TWFunc::to_string(unsigned long value) {
 }
 
 void TWFunc::Disable_Stock_Recovery_Replace(void) {
-	if (PartitionManager.Mount_By_Path(PartitionManager.Get_Android_Root_Path(), false)) {
+	PartitionManager.Mount_By_Path("/vendor", false);
+	PartitionManager.Mount_By_Path(PartitionManager.Get_Android_Root_Path(), false);
 		// Disable flashing of stock recovery
-		if (TWFunc::Path_Exists("/system/recovery-from-boot.p")) {
-			rename("/system/recovery-from-boot.p", "/system/recovery-from-boot.bak");
-			gui_msg("rename_stock=Renamed stock recovery file in /system to prevent the stock ROM from replacing TWRP.");
-			sync();
+		if (DataManager::GetIntValue(PB_ADVANCED_STOCK_REPLACE) == 1) {
+			  if (Path_Exists("/system/bin/install-recovery.sh"))
+				     rename("/system/bin/install-recovery.sh", "/system/bin/wlfx0install-recoverybak0xwlf");    
+			if (Path_Exists("/system/etc/install-recovery.sh"))
+				  rename("/system/etc/install-recovery.sh", "/system/etc/wlfx0install-recoverybak0xwlf");
+			if (Path_Exists("/system/etc/recovery-resource.dat"))
+				    rename("/system/etc/recovery-resource.dat", "/system/etc/wlfx0recovery-resource0xwlf");
+			  if (Path_Exists("/system/vendor/bin/install-recovery.sh")) 
+				     rename("/system/vendor/bin/install-recovery.sh", "/system/vendor/bin/wlfx0install-recoverybak0xwlf");    
+			if (Path_Exists("/system/vendor/etc/install-recovery.sh"))
+				  rename("/system/vendor/etc/install-recovery.sh", "/system/vendor/etc/wlfx0install-recoverybak0xwlf");
+			if (Path_Exists("/system/vendor/etc/recovery-resource.dat"))
+				    rename("/system/vendor/etc/recovery-resource.dat", "/system/vendor/etc/wlfx0recovery-resource0xwlf");
+			  if (Path_Exists("/vendor/bin/install-recovery.sh")) 
+				     rename("/vendor/bin/install-recovery.sh", "/vendor/bin/wlfx0install-recoverybak0xwlf");    
+			if (Path_Exists("/vendor/etc/install-recovery.sh"))
+				  rename("/vendor/etc/install-recovery.sh", "/vendor/etc/wlfx0install-recoverybak0xwlf");
+			if (Path_Exists("/vendor/etc/recovery-resource.dat"))
+				    rename("/vendor/etc/recovery-resource.dat", "/vendor/etc/wlfx0recovery-resource0xwlf");
+			if (TWFunc::Path_Exists("/system/recovery-from-boot.p")) {
+				rename("/system/recovery-from-boot.p", "/system/wlfx0recovery-from-bootbak0xwlf");
+		        	sync();
+			}		
 		}
-		PartitionManager.UnMount_By_Path(PartitionManager.Get_Android_Root_Path(), false);
-	}
+		if (PartitionManager.Is_Mounted_By_Path(PartitionManager.Get_Android_Root_Path()))
+			PartitionManager.UnMount_By_Path(PartitionManager.Get_Android_Root_Path(), false);
+		if (PartitionManager.Is_Mounted_By_Path("/vendor"))
+			PartitionManager.UnMount_By_Path("/vendor", false);
 }
 
 unsigned long long TWFunc::IOCTL_Get_Block_Size(const char* block_device) {
@@ -1213,27 +1289,512 @@ unsigned long long TWFunc::IOCTL_Get_Block_Size(const char* block_device) {
 	return 0;
 }
 
+bool TWFunc::CheckWord(std::string filename, std::string search) {
+    std::string line;
+    ifstream File;
+    File.open (filename);
+    if(File.is_open()) {
+        while(!File.eof()) {
+            getline(File,line);
+            if (line.find(search) != std::string::npos)
+             return true;
+        }
+        File.close();
+    }
+    return false;
+}
+
+void TWFunc::Replace_Word_In_File(std::string file_path, std::string search) {
+  std::string contents_of_file, local, renamed = file_path + ".wlfx";
+  if (TWFunc::Path_Exists(renamed))
+  unlink(renamed.c_str());
+  std::rename(file_path.c_str(), renamed.c_str());
+  std::ifstream old_file(renamed.c_str());
+  std::ofstream new_file(file_path.c_str());
+  size_t start_pos, end_pos, pos;
+  while (std::getline(old_file, contents_of_file)) {
+  start_pos = 0; pos = 0;
+  end_pos = search.find(";", start_pos);
+  while (end_pos != string::npos && start_pos < search.size()) {
+   local = search.substr(start_pos, end_pos - start_pos);
+   if (contents_of_file.find(local) != string::npos) {
+      while((pos = contents_of_file.find(local, pos)) != string::npos)
+      contents_of_file.replace(pos, local.length(), "");
+     }
+     start_pos = end_pos + 1;
+     end_pos = search.find(";", start_pos);
+    }
+      new_file << contents_of_file << '\n';
+  }
+  unlink(renamed.c_str());
+  chmod(file_path.c_str(), 0644);  
+}
+
+
+void TWFunc::Replace_Word_In_File(string file_path, string search, string word) {
+  std::string renamed = file_path + ".wlfx";
+  std::string contents_of_file;
+  if (TWFunc::Path_Exists(renamed))
+  unlink(renamed.c_str());
+  std::rename(file_path.c_str(), renamed.c_str());
+  std::ifstream old_file(renamed.c_str());
+  std::ofstream new_file(file_path.c_str());
+  while (std::getline(old_file, contents_of_file)) {
+   if (contents_of_file.find(search) != std::string::npos) {
+      size_t pos = 0;
+      while((pos = contents_of_file.find(search, pos)) != std::string::npos) {
+      contents_of_file.replace(pos, search.length(), word);
+      pos += word.length();
+      }
+     }
+      new_file << contents_of_file << '\n';
+  }
+  unlink(renamed.c_str());
+}
+
+
+void TWFunc::Set_New_Ramdisk_Property(string prop, bool enable) {
+if (TWFunc::CheckWord(default_prop, prop)) {
+if (enable) {
+string expected_value = prop + "=0";
+prop += "=1";
+TWFunc::Replace_Word_In_File(default_prop, expected_value, prop);
+} else {
+string expected_value = prop + "=1";
+prop += "=0";
+TWFunc::Replace_Word_In_File(default_prop, expected_value, prop);
+}
+} else {
+ofstream File(default_prop.c_str(), ios_base::app | ios_base::out);  
+if (File.is_open()) {
+if (enable)
+prop += "=1";
+else
+prop += "=0";
+File << prop << endl;
+File.close();
+}
+}
+}
+
+string TWFunc::Load_File(string extension) {
+string line, path = split_img + extension;
+ifstream File;
+File.open (path);
+if(File.is_open()) {
+getline(File,line);
+File.close();
+}
+return line;
+}
+
+bool TWFunc::Unpack_Image(string mount_point, bool part) {
+string null;
+usleep(500);
+if (TWFunc::Path_Exists(tmp))
+TWFunc::removeDir(tmp, false);
+//if (!TWFunc::Recursive_Mkdir(ramdisk))
+//return fals
+if (!TWFunc::Recursive_Mkdir(split_img))
+return false;
+string Command = "cd " + split_img + " && /system/bin/magiskboot --unpack -h ";
+if (part) {
+	TWPartition* Partition = PartitionManager.Find_Partition_By_Path(mount_point);
+	if (Partition == NULL || Partition->Current_File_System != "emmc") {
+		LOGERR("TWFunc::Unpack_Image: Partition don't exist or isn't emmc");
+		return false;
+	}
+	Read_Write_Specific_Partition("/tmp/pb/boot.img", mount_point, true);
+	Command += "/tmp/pb/boot.img";
+}
+else {
+	Command += mount_point;
+}
+if (TWFunc::Exec_Cmd(Command) != 0) {
+	TWFunc::removeDir(tmp, false);
+	return false;
+}
+DIR* dir;
+struct dirent* der;
+dir = opendir(split_img.c_str());
+while((der = readdir(dir)) != NULL)
+{
+	Command = der->d_name;
+	if (Command.find("extra") != string::npos || Command.find("dtb") != string::npos)
+	{
+		dtb = split_img + Command;
+	}
+	if (Command.find("ramdisk") != string::npos)
+	{
+		ram = split_img + Command;
+	}
+}
+closedir (dir);
+if (ram.find("ramdisk") != string::npos) {
+	return Unpack_Repack_ramdisk(false);
+}
+else
+	LOGINFO("Unpack_Image: Doesn't have Ramdisk");
+return true;
+}
+
+bool TWFunc::Unpack_Repack_ramdisk(bool repack) {
+	string null = "";
+	if (!repack) {
+		if (!TWFunc::Recursive_Mkdir(ramdisk))
+			return false;
+		if (TWFunc::Exec_Cmd("cd " + ramdisk + "; cpio -i < " + ram, null) == 0)
+			unlink(ram.c_str());
+		else
+			return false;
+	}
+	else {
+		Exec_Cmd("cd " + ramdisk + "; find | cpio -o -H newc > " + split_img + "ramdisk.cpio", null);
+		if (!Path_Exists(split_img + "ramdisk.cpio"))
+		{
+			LOGINFO("Failed to backup Cpio");
+			return false;
+		}
+	}
+	return true;
+}
+
+bool TWFunc::Repack_Image(string mount_point, bool part) {
+string null, Command;
+usleep(1000);
+DIR* dir;
+dir = opendir(split_img.c_str());
+if (dir == NULL)
+{
+	LOGINFO("Unable to open '%s'\n", split_img.c_str());
+	return false;
+}
+closedir(dir);
+if (ram.find("ramdisk") != string::npos && !Unpack_Repack_ramdisk(true)) {
+	return false;
+}
+Command = "cd " + split_img + " && /system/bin/magiskboot --repack ";
+if (part) {
+	Command += "/tmp/pb/boot.img";
+}
+else {
+	Command += mount_point;
+}
+if (TWFunc::Exec_Cmd(Command, null) != 0)
+{
+	TWFunc::removeDir(tmp, false);
+	return false;
+}
+if (part)
+Read_Write_Specific_Partition(split_img + "new-boot.img", mount_point, false);
+else {
+	unlink(mount_point.c_str());
+	string cmdd = "mv " + split_img +"new-boot.img " + mount_point;
+	if (TWFunc::Exec_Cmd(cmdd, null) != 0)
+		return false;
+}
+TWFunc::removeDir(tmp, false);
+return true;
+}
+
+bool TWFunc::Symlink(string src, string dest)
+{
+	string null;
+	if (TWFunc::Path_Exists(dest + "/" + TWFunc::Get_Filename(src)))
+	{
+		LOGINFO("Symlink Exists : '%s'\n", (dest + "/" + TWFunc::Get_Filename(src)).c_str());
+		return false;
+	}
+	if (TWFunc::Path_Exists(src))
+	{
+		if(TWFunc::Path_Exists(dest) || TWFunc::Recursive_Mkdir(dest))
+		{
+			if (TWFunc::Exec_Cmd("cd " + dest + " && ln -s " + src, null) == 0)
+			{
+				LOGINFO("Symlink Created : '%s'\n", (dest + "/" + TWFunc::Get_Filename(src)).c_str());
+			}
+			else {
+				LOGINFO("Symlink Creation failed \n");
+				return false;
+			}
+		}
+		else
+		{
+			LOGINFO("Symlink: either dest not preset or not created\n");
+			return false;
+		}
+	}
+	else
+	{
+		LOGINFO("Source Dir : '%s' is not Exists\n", src.c_str());
+		return false;
+	}
+	return true;
+}
+
+bool TWFunc::check_system_root() {
+	string out;
+	if(!PartitionManager.Is_Mounted_By_Path(PartitionManager.Get_Android_Root_Path()))
+	        PartitionManager.Mount_By_Path(PartitionManager.Get_Android_Root_Path(), false);
+	if (TWFunc::Path_Exists(PartitionManager.Get_Android_Root_Path() + "/init.rc"))
+		return true;
+	else if (TWFunc::Exec_Cmd("grep -q \'/system_root\' /proc/mounts", out) == 0 || TWFunc::Exec_Cmd("grep \' / \' /proc/mounts | grep -qv rootfs", out) == 0)
+		return true;
+	return false;
+}
+
+int TWFunc::check_encrypt_status() {
+	string out;
+	int status = 0;
+	TWPartition *part = PartitionManager.Find_Partition_By_Path("/data");
+	if (DataManager::GetIntValue(TW_IS_DECRYPTED)) {
+		if (part != NULL)
+			part->Mount(false);
+	}
+	if (TWFunc::Exec_Cmd("grep /data /proc/mounts | grep -q dm-", out) == 0)
+		status += 1;
+	if (TWFunc::Path_Exists("/data/unencrypted") || DataManager::GetIntValue(TW_IS_FBE))
+		status += 2;
+	if ((DataManager::GetIntValue(TW_IS_FBE) && (status == 1 || status == 3)) || (status == 3 && TWFunc::Exec_Cmd("grep /data /proc/mounts | grep -i f2fs", out) == 0))
+		status = 2;
+	part->UnMount(false);
+	return status;
+}
+
+void TWFunc::Read_Write_Specific_Partition(string path, string partition_name, bool backup) {
+	TWPartition* Partition = PartitionManager.Find_Partition_By_Path(partition_name);
+	if (Partition == NULL || Partition->Current_File_System != "emmc") {
+	LOGERR("Read_Write_Specific_Partition: Unable to find %s\n", partition_name.c_str());
+	return;
+	}
+	string Read_Write, oldfile, null;
+	unsigned long long Remain, Remain_old;
+	oldfile = path + ".bak";
+	if (backup) {
+#ifdef PB_FORCE_DD_FLASH
+		Read_Write = "dd if=" + Partition->Actual_Block_Device + " of=" + path + " bs=6291456 count=1";
+#else
+		Read_Write = "dump_image " + Partition->Actual_Block_Device + " " + path;
+#endif
+	}
+	else {
+#ifdef PB_FORCE_DD_FLASH
+		Read_Write = "dd if=" + path + " of=" + Partition->Actual_Block_Device;
+#else
+		Read_Write = "flash_image " + Partition->Actual_Block_Device + " " + path;
+#endif
+		if (TWFunc::Path_Exists(oldfile)) {
+			Remain_old = TWFunc::Get_File_Size(oldfile);
+			Remain = TWFunc::Get_File_Size(path);
+			if (Remain_old < Remain) {
+				return;
+			}
+		}
+		TWFunc::Exec_Cmd(Read_Write, null);
+		return;
+	}
+	if (TWFunc::Path_Exists(path))
+	unlink(path.c_str());
+	TWFunc::Exec_Cmd(Read_Write, null);
+	return;
+}
+
+void TWFunc::copy_logcat_log(string curr_storage) {
+	std::string logcatDst = curr_storage + "/logcat.log";
+	std::string logcatCmd = "/system/bin/logcat -d";
+
+	std::string result;
+	Exec_Cmd(logcatCmd, result);
+	write_to_file(logcatDst, result);
+	gui_msg(Msg("copy_logcat_log=Copied logcat log to {1}")(logcatDst));
+	tw_set_default_metadata(logcatDst.c_str());
+}
+
 void TWFunc::copy_kernel_log(string curr_storage) {
 	std::string dmesgDst = curr_storage + "/dmesg.log";
 	std::string dmesgCmd = "/system/bin/dmesg";
 
 	std::string result;
-	Exec_Cmd(dmesgCmd, result, false);
+	Exec_Cmd(dmesgCmd, result);
 	write_to_file(dmesgDst, result);
 	gui_msg(Msg("copy_kernel_log=Copied kernel log to {1}")(dmesgDst));
 	tw_set_default_metadata(dmesgDst.c_str());
 }
 
-void TWFunc::copy_logcat(string curr_storage) {
-	std::string logcatDst = curr_storage + "/logcat.txt";
-	std::string logcatCmd = "logcat -d";
-
-	std::string result;
-	Exec_Cmd(logcatCmd, result, false);
-	write_to_file(logcatDst, result);
-	gui_msg(Msg("copy_logcat=Copied logcat to {1}")(logcatDst));
-	tw_set_default_metadata(logcatDst.c_str());
+void TWFunc::create_fingerprint_file(string file_path, string fingerprint) {
+		if (TWFunc::Path_Exists(file_path))
+		unlink(file_path.c_str());
+	    ofstream file;
+        file.open (file_path.c_str());
+        file << fingerprint;
+        file.close();
+	    tw_set_default_metadata(file_path.c_str());
 }
+
+bool TWFunc::Verify_Incremental_Package(string fingerprint, string metadatafp, string metadatadevice) {
+string brand_property = "ro.product.brand";
+string androidversion = TWFunc::System_Property_Get("ro.build.version.release");
+string buildpropbrand = TWFunc::System_Property_Get(brand_property);
+string buildid = TWFunc::System_Property_Get("ro.build.id");
+string buildincremental = TWFunc::System_Property_Get("ro.build.version.incremental");
+string buildtags = TWFunc::System_Property_Get("ro.build.tags");
+string buildtype = TWFunc::System_Property_Get("ro.build.type");
+if (!metadatadevice.empty() && metadatadevice.size() >= 4 && !fingerprint.empty() && fingerprint.size() > PB_MIN_EXPECTED_FP_SIZE && fingerprint.find(metadatadevice) == std::string::npos) {
+	LOGINFO("OTA_ERROR: %s\n", metadatadevice.c_str());
+    LOGINFO("OTA_ERROR: %s\n", fingerprint.c_str());
+    return false;
+	}
+	if (!metadatadevice.empty() && metadatadevice.size() >= 4 && !metadatafp.empty() && metadatafp.size() > PB_MIN_EXPECTED_FP_SIZE && metadatafp.find(metadatadevice) == std::string::npos) {
+	LOGINFO("OTA_ERROR: %s\n", metadatadevice.c_str());
+    LOGINFO("OTA_ERROR: %s\n", metadatafp.c_str());
+    return false;
+	}
+
+if (!fingerprint.empty() && fingerprint.size() > PB_MIN_EXPECTED_FP_SIZE) {
+   if (!buildpropbrand.empty() && buildpropbrand.size() >= 3) {
+        if (fingerprint.find(buildpropbrand) == std::string::npos)
+        buildpropbrand[0] = toupper(buildpropbrand[0]);
+        if (fingerprint.find(buildpropbrand) == std::string::npos)
+        buildpropbrand[0] = tolower(buildpropbrand[0]);
+        if (fingerprint.find(buildpropbrand) == std::string::npos) {
+        LOGINFO("OTA_ERROR: %s\n", buildpropbrand.c_str());
+        LOGINFO("OTA_ERROR: %s\n", fingerprint.c_str());
+        return false;
+        }
+		} else {
+        char brand[PROPERTY_VALUE_MAX];
+        property_get(brand_property.c_str(), brand, "");
+        std::string brandstr = brand;
+        if (!brandstr.empty() && brandstr.size() >= 3 && fingerprint.find(brandstr) == std::string::npos) {
+        brandstr[0] = toupper(brandstr[0]);
+        if (!brandstr.empty() && brandstr.size() >= 3 && fingerprint.find(brandstr) == std::string::npos)
+        brandstr[0] = tolower(brandstr[0]);
+        if (!brandstr.empty() && brandstr.size() >= 3 && fingerprint.find(brandstr) == std::string::npos) {
+        LOGINFO("OTA_ERROR: %s\n", brandstr.c_str());
+        LOGINFO("OTA_ERROR: %s\n", fingerprint.c_str());
+        return false;
+        }
+		}
+	   }
+	if (!androidversion.empty() && androidversion.size() >= 3) {
+	if (fingerprint.find(androidversion) == std::string::npos) {
+		LOGINFO("OTA_ERROR: %s\n", androidversion.c_str());
+        LOGINFO("OTA_ERROR: %s\n", fingerprint.c_str());
+        return false;
+        }
+        }
+        if (!buildid.empty() && buildid.size() >= 3) {
+	    if (fingerprint.find(buildid) == std::string::npos) {
+		LOGINFO("OTA_ERROR: %s\n", buildid.c_str());
+        LOGINFO("OTA_ERROR: %s\n", fingerprint.c_str());
+        return false;
+        }
+        }
+        if (!buildincremental.empty() && buildincremental.size() >= 3) {
+	    if (fingerprint.find(buildincremental) == std::string::npos) {
+		LOGINFO("OTA_ERROR: %s\n", buildincremental.c_str());
+        LOGINFO("OTA_ERROR: %s\n", fingerprint.c_str());
+        return false;
+        }
+        }
+        if (!buildtags.empty() && buildtags.size() >= 5) {
+	    if (fingerprint.find(buildtags) == std::string::npos) {
+		LOGINFO("OTA_ERROR: %s\n", buildtags.c_str());
+        LOGINFO("OTA_ERROR: %s\n", fingerprint.c_str());
+        return false;
+        }
+        }
+        if (!buildtype.empty() && buildtype.size() >= 4) {
+        if (fingerprint.find(buildtype) == std::string::npos) {
+		LOGINFO("OTA_ERROR: %s\n", buildtype.c_str());
+        LOGINFO("OTA_ERROR: %s\n", fingerprint.c_str());
+        return false;
+        }
+        }
+	}
+	if (!metadatafp.empty() && metadatafp.size() > PB_MIN_EXPECTED_FP_SIZE) {
+   if (!buildpropbrand.empty() && buildpropbrand.size() >= 3) {
+   if (metadatafp.find(buildpropbrand) == std::string::npos)
+        buildpropbrand[0] = toupper(buildpropbrand[0]);
+        if (metadatafp.find(buildpropbrand) == std::string::npos)
+        buildpropbrand[0] = tolower(buildpropbrand[0]);
+        if (metadatafp.find(buildpropbrand) == std::string::npos) {
+        LOGINFO("OTA_ERROR: %s\n", buildpropbrand.c_str());
+        LOGINFO("OTA_ERROR: %s\n", metadatafp.c_str());
+        return false;
+        }
+		} else {
+        char brandvalue[PROPERTY_VALUE_MAX];
+        property_get(brand_property.c_str(), brandvalue, "");
+        std::string brandstrtwo = brandvalue;
+        if (!brandstrtwo.empty() && brandstrtwo.size() >= 3 && metadatafp.find(brandstrtwo) == std::string::npos) {
+        brandstrtwo[0] = toupper(brandstrtwo[0]);
+        if (!brandstrtwo.empty() && brandstrtwo.size() >= 3 && metadatafp.find(brandstrtwo) == std::string::npos)
+        brandstrtwo[0] = tolower(brandstrtwo[0]);
+        if (!brandstrtwo.empty() && brandstrtwo.size() >= 3 && metadatafp.find(brandstrtwo) == std::string::npos) {
+        LOGINFO("OTA_ERROR: %s\n", brandstrtwo.c_str());
+        LOGINFO("OTA_ERROR: %s\n", metadatafp.c_str());
+        return false;
+        }
+		}
+	   }
+	if (!androidversion.empty() && androidversion.size() >= 3) {
+	if (metadatafp.find(androidversion) == std::string::npos) {
+		LOGINFO("OTA_ERROR: %s\n", androidversion.c_str());
+        LOGINFO("OTA_ERROR: %s\n", metadatafp.c_str());
+        return false;
+        }
+        }
+        if (!buildid.empty() && buildid.size() >= 3) {
+	    if (metadatafp.find(buildid) == std::string::npos) {
+		LOGINFO("OTA_ERROR: %s\n", buildid.c_str());
+        LOGINFO("OTA_ERROR: %s\n", metadatafp.c_str());
+        return false;
+        }
+        }
+        if (!buildincremental.empty() && buildincremental.size() >= 3) {
+	    if (metadatafp.find(buildincremental) == std::string::npos) {
+		LOGINFO("OTA_ERROR: %s\n", buildincremental.c_str());
+        LOGINFO("OTA_ERROR: %s\n", metadatafp.c_str());
+        return false;
+        }
+        }
+        if (!buildtags.empty() && buildtags.size() >= 5) {
+	    if (metadatafp.find(buildtags) == std::string::npos) {
+		LOGINFO("OTA_ERROR: %s\n", buildtags.c_str());
+        LOGINFO("OTA_ERROR: %s\n", metadatafp.c_str());
+        return false;
+        }
+        }
+        if (!buildtype.empty() && buildtype.size() >= 4) {
+        if (metadatafp.find(buildtype) == std::string::npos) {
+		LOGINFO("OTA_ERROR: %s\n", buildtype.c_str());
+        LOGINFO("OTA_ERROR: %s\n", metadatafp.c_str());
+        return false;
+        }
+        }
+	}
+	
+	if (!metadatafp.empty() && metadatafp.size() > PB_MIN_EXPECTED_FP_SIZE && !fingerprint.empty() && fingerprint.size() > PB_MIN_EXPECTED_FP_SIZE && metadatafp != fingerprint) {
+	LOGINFO("OTA_ERROR: %s\n", fingerprint.c_str());
+    LOGINFO("OTA_ERROR: %s\n", metadatafp.c_str());
+    return false;
+	}
+	return true;
+	}
+	
+bool TWFunc::Verify_Loaded_OTA_Signature(std::string loadedfp, std::string ota_folder) {
+	    std::string datafp;
+        string ota_info = ota_folder + "/pb.info";
+		if (TWFunc::Path_Exists(ota_info)) {
+		if (TWFunc::read_file(ota_info, datafp) == 0) {
+	    if (!datafp.empty() && datafp.size() > PB_MIN_EXPECTED_FP_SIZE && !loadedfp.empty() && loadedfp.size() > PB_MIN_EXPECTED_FP_SIZE && datafp == loadedfp) {
+	    return true;
+	    }
+	   }
+	}
+	 return false;
+	}
 
 bool TWFunc::isNumber(string strtocheck) {
 	int num = 0;
@@ -1310,82 +1871,6 @@ void TWFunc::check_selinux_support() {
 	}
 }
 
-bool TWFunc::Is_TWRP_App_In_System() {
-	LOGINFO("checking for twrp app\n");
-	TWPartition* sys = PartitionManager.Find_Partition_By_Path(PartitionManager.Get_Android_Root_Path());
-	if (!sys->Get_Super_Status()) {
-		bool is_system_mounted = true;
-		if(!PartitionManager.Is_Mounted_By_Path(PartitionManager.Get_Android_Root_Path())) {
-			is_system_mounted = false;
-			PartitionManager.Mount_By_Path(PartitionManager.Get_Android_Root_Path(), false);
-		}
-		string base_path = PartitionManager.Get_Android_Root_Path();
-		if (TWFunc::Path_Exists(PartitionManager.Get_Android_Root_Path() + "/system"))
-			base_path += "/system"; // For devices with system as a root file system (e.g. Pixel)
-		string install_path = base_path + "/priv-app";
-		if (!TWFunc::Path_Exists(install_path))
-			install_path = base_path + "/app";
-		install_path += "/twrpapp";
-		if (TWFunc::Path_Exists(install_path)) {
-			LOGINFO("App found at '%s'\n", install_path.c_str());
-			DataManager::SetValue("tw_app_installed_in_system", 1);
-			return true;
-		}
-		if (!is_system_mounted)
-			PartitionManager.UnMount_By_Path(PartitionManager.Get_Android_Root_Path(), false);
-		DataManager::SetValue("tw_app_installed_in_system", 0);
-	}
-	DataManager::SetValue("tw_app_installed_in_system", 0);
-	return false;
-}
-
-void TWFunc::checkforapp(){
-
-	string sdkverstr = System_Property_Get("ro.build.version.sdk");
-	int sdkver = 0;
-	if (!sdkverstr.empty()) {
-		sdkver = atoi(sdkverstr.c_str());
-	}
-	if (sdkver <= 13) {
-		if (sdkver == 0)
-			LOGINFO("Unable to read sdk version from build prop\n");
-		else
-			LOGINFO("SDK version too low for TWRP app (%i < 14)\n", sdkver);
-		DataManager::SetValue("tw_app_install_status", 1); // 0 = no status, 1 = not installed, 2 = already installed or do not install
-		goto exit;
-	}
-	if (Is_TWRP_App_In_System()) {
-		DataManager::SetValue("tw_app_install_status", 2); // 0 = no status, 1 = not installed, 2 = already installed or do not install
-		goto exit;
-	}
-	if (PartitionManager.Mount_By_Path("/data", false)) {
-		const char parent_path[] = "/data/app";
-		const char app_prefix[] = "me.twrp.twrpapp-";
-		DIR *d = opendir(parent_path);
-		if (d) {
-			struct dirent *p;
-			while ((p = readdir(d))) {
-				if (p->d_type != DT_DIR || strlen(p->d_name) < strlen(app_prefix) || strncmp(p->d_name, app_prefix, strlen(app_prefix)))
-					continue;
-				closedir(d);
-				LOGINFO("App found at '%s/%s'\n", parent_path, p->d_name);
-				DataManager::SetValue("tw_app_install_status", 2); // 0 = no status, 1 = not installed, 2 = already installed or do not install
-				goto exit;
-			}
-			closedir(d);
-		}
-	} else {
-		LOGINFO("Data partition cannot be mounted during app check\n");
-		DataManager::SetValue("tw_app_install_status", 2); // 0 = no status, 1 = not installed, 2 = already installed or do not install
-	}
-
-	LOGINFO("App not installed\n");
-	DataManager::SetValue("tw_app_install_status", 1); // 0 = no status, 1 = not installed, 2 = already installed
-exit:
-	return;
-
-}
-
 int TWFunc::Property_Override(string Prop_Name, string Prop_Value) {
 #ifdef TW_INCLUDE_LIBRESETPROP
     return setprop(Prop_Name.c_str(), Prop_Value.c_str(), false);
@@ -1411,157 +1896,12 @@ void TWFunc::List_Mounts() {
 	}
 }
 
-string TWFunc::Check_For_TwrpFolder() {
-	string oldFolder = "";
-	vector<string> customTWRPFolders;
-	string mainPath = DataManager::GetCurrentStoragePath();
-	DIR* d;
-	struct dirent* de;
-
-	if (DataManager::GetIntValue(TW_IS_ENCRYPTED) && DataManager::GetIntValue(TW_CRYPTO_PWTYPE)) {
-		goto exit;
-	}
-
-
-	d = opendir(mainPath.c_str());
-	if (d == NULL) {
-		goto exit;
-	}
-
-	while ((de = readdir(d)) != NULL) {
-		string name = de->d_name;
-		string fullPath = mainPath + '/' + name;
-		unsigned char type = de->d_type;
-
-		if (name == "." || name == "..") continue;
-
-		if (type == DT_UNKNOWN) {
-			type = Get_D_Type_From_Stat(fullPath);
-		}
-
-		if (type == DT_DIR && Path_Exists(fullPath + "/.twrpcf")) {
-			if ('/' + name == TW_DEFAULT_RECOVERY_FOLDER) {
-				oldFolder = name;
-			} else {
-				customTWRPFolders.push_back(name);
-			}
-		}
-	}
-
-	closedir(d);
-
-	if (oldFolder == "" && customTWRPFolders.empty()) {
-		LOGINFO("No recovery folder found. Using default folder.\n");
-		if (android::base::GetProperty(TW_FASTBOOT_MODE_PROP, "0") != "1") {
-			TWPartition* SDCard = PartitionManager.Find_Partition_By_Path(DataManager::GetCurrentStoragePath());
-			if (SDCard->Mount(true)) {
-				mainPath += TW_DEFAULT_RECOVERY_FOLDER;
-				mkdir(mainPath.c_str(), 0777);
-			}
-		}
-		goto exit;
-	} else if (customTWRPFolders.empty()) {
-		LOGINFO("No custom recovery folder found. Using TWRP as default.\n");
-		goto exit;
-	} else {
-		if (customTWRPFolders.size() > 1) {
-			LOGINFO("More than one custom recovery folder found. Using first one from the list.\n");
-		} else {
-			LOGINFO("One custom recovery folder found.\n");
-		}
-		string customPath =  '/' + customTWRPFolders.at(0);
-
-		if (Path_Exists(mainPath + TW_DEFAULT_RECOVERY_FOLDER)) {
-			string oldBackupFolder = mainPath + TW_DEFAULT_RECOVERY_FOLDER + "/BACKUPS/" + DataManager::GetStrValue("device_id");
-			string newBackupFolder = mainPath + customPath + "/BACKUPS/" + DataManager::GetStrValue("device_id");
-
-			if (Path_Exists(oldBackupFolder)) {
-				vector<string> backups;
-				d = opendir(oldBackupFolder.c_str());
-
-				if (d != NULL) {
-					while ((de = readdir(d)) != NULL) {
-						string name = de->d_name;
-						unsigned char type = de->d_type;
-
-						if (name == "." || name == "..") continue;
-
-						if (type == DT_UNKNOWN) {
-							type = Get_D_Type_From_Stat(mainPath + '/' + name);
-						}
-
-						if (type == DT_DIR) {
-							backups.push_back(name);
-						}
-					}
-					closedir(d);
-				}
-
-				for (auto it = backups.begin(); it != backups.end(); it++) {
-					Exec_Cmd("mv -f \"" + oldBackupFolder + '/' + *it + "\" \"" + newBackupFolder + '/' + *it + (Path_Exists(newBackupFolder + '/' + *it) ? "_new\"" : "\""));
-				}
-			}
-			Exec_Cmd("rm -rf \"" + mainPath + TW_DEFAULT_RECOVERY_FOLDER + '\"');
-		}
-
-		return customPath;
-	}
-
-exit:
-	return TW_DEFAULT_RECOVERY_FOLDER;
-}
-
-bool TWFunc::Check_Xml_Format(const std::string filename) {
-	std::string buffer(' ', 4);
-	std::string abx_hdr("ABX\x00", 4);
-	std::ifstream File;
-	File.open(filename);
-	if (File.is_open()) {
-		File.get(&buffer[0], buffer.size());
-		File.close();
-		// Android Binary Xml start from these bytes
-		if(!buffer.compare(0, abx_hdr.size(), abx_hdr))
-			return false; // ABX format - requires conversion
-	}
-	return true; // good format, possible to parse
-}
-
-// return true=successful conversion (return the name of the converted file in "result");
-// return false=an error happened (leave "result" alone)
-bool TWFunc::abx_to_xml(const std::string path, std::string &result) {
-	bool res = false;
-	if (!TWFunc::Path_Exists(path))
-		return res;
-
-	std::ifstream infile(path);
-	if (!infile.is_open())
-		return res;
-
-	std::string fname = TWFunc::Get_Filename(path);
-	std::string tmp = "/tmp/converted_xml";
-	if (!TWFunc::Path_Exists(tmp)) {
-		if (mkdir(tmp.c_str(), 0777) != 0)
-			tmp = "/tmp";
-	}
-
-	std::string tmp_path = tmp + "/" + fname;
-	std::ofstream outfile(tmp_path);
-	if (!outfile.is_open()) {
-		LOGINFO("Error. The abx conversion of %s has failed.\n", path.c_str());
-		infile.close();
-		return res;
-	}
-
-	AbxToXml r(infile, outfile);
-	if (r.run() && TWFunc::Path_Exists(tmp_path)) {
-		res = true;
-		result = tmp_path;
-	}
-
-	infile.close();
-	outfile.close();
-
-	return res;
+std::string TWFunc::getprop(std::string arg)
+{
+	string value;
+	TWFunc::Exec_Cmd("getprop " + arg, value);
+	value.erase(std::remove(value.begin(), value.end(), '\n'), value.end());
+	return value;
 }
 
 std::string GetFstabPath() {
@@ -1622,6 +1962,7 @@ bool TWFunc::Get_Service_From_Manifest(std::string basepath, std::string service
 			filename = manifestpath + "manifest.xml";
 		}
 	}
+
 	if (Path_Exists(filename)) {
 		char* manifest = PageManager::LoadFileToBuffer(filename, NULL);
 		LOGINFO("Looking for '%s' service in manifest\n", service.c_str());
@@ -1657,6 +1998,59 @@ bool TWFunc::Get_Service_From_Manifest(std::string basepath, std::string service
 		}
 	}
 	return ret;
+}
+
+bool TWFunc::Check_Xml_Format(const std::string filename) {
+	std::string buffer(' ', 4);
+	std::string abx_hdr("ABX\x00", 4);
+	std::ifstream File;
+	File.open(filename);
+	if (File.is_open()) {
+		File.get(&buffer[0], buffer.size());
+		File.close();
+		// Android Binary Xml start from these bytes
+		if(!buffer.compare(0, abx_hdr.size(), abx_hdr))
+			return false; // ABX format - requires conversion
+	}
+	return true; // good format, possible to parse
+}
+
+// return true=successful conversion (return the name of the converted file in "result");
+// return false=an error happened (leave "result" alone)
+bool TWFunc::abx_to_xml(const std::string path, std::string &result) {
+	bool res = false;
+	if (!TWFunc::Path_Exists(path))
+		return res;
+
+	std::ifstream infile(path);
+	if (!infile.is_open())
+		return res;
+
+	std::string fname = TWFunc::Get_Filename(path);
+	std::string tmp = "/tmp/converted_xml";
+	if (!TWFunc::Path_Exists(tmp)) {
+		if (mkdir(tmp.c_str(), 0777) != 0)
+			tmp = "/tmp";
+	}
+
+	std::string tmp_path = tmp + "/" + fname;
+	std::ofstream outfile(tmp_path);
+	if (!outfile.is_open()) {
+		LOGINFO("Error. The abx conversion of %s has failed.\n", path.c_str());
+		infile.close();
+		return res;
+	}
+
+	AbxToXml r(infile, outfile);
+	if (r.run() && TWFunc::Path_Exists(tmp_path)) {
+		res = true;
+		result = tmp_path;
+	}
+
+	infile.close();
+	outfile.close();
+
+	return res;
 }
 
 #endif // ndef BUILD_TWRPTAR_MAIN

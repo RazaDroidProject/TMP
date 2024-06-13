@@ -1,6 +1,9 @@
 /*
 	Copyright 2013 to 2021 TeamWin
 	This file is part of TWRP/TeamWin Recovery Project.
+	
+	Copyright 2018 ATG Droid  
+	This file is part of RWRP/RedWolf Recovery Project
 
 	TWRP is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -112,6 +115,7 @@ const struct flag_list mount_flags[] = {
 #ifdef MS_SHARED
 	{ "shared",           MS_SHARED },
 #endif
+	{ "utf8",   0 },
 	{ "sync",             MS_SYNCHRONOUS },
 	{ 0,                  0 },
 };
@@ -138,6 +142,7 @@ enum TW_FSTAB_FLAGS {
 	TWFLAG_METADATA_ENCRYPTION,
 	TWFLAG_FLASHIMG,
 	TWFLAG_FORCEENCRYPT,
+	TWFLAG_FSCOMPRESS,
 	TWFLAG_FSFLAGS,
 	TWFLAG_IGNOREBLKID,
 	TWFLAG_LENGTH,
@@ -166,7 +171,6 @@ enum TW_FSTAB_FLAGS {
 	TWFLAG_WRAPPEDKEY,
 	TWFLAG_ADOPTED_MOUNT_DELAY,
 	TWFLAG_DM_USE_ORIGINAL_PATH,
-	TWFLAG_FS_COMPRESS,
 	TWFLAG_LOGICAL,
 };
 
@@ -188,6 +192,7 @@ const struct flag_list tw_flags[] = {
 	{ "metadata_encryption=",   TWFLAG_METADATA_ENCRYPTION },
 	{ "flashimg",               TWFLAG_FLASHIMG },
 	{ "forceencrypt=",          TWFLAG_FORCEENCRYPT },
+	{ "fscompress",             TWFLAG_FSCOMPRESS },
 	{ "fsflags=",               TWFLAG_FSFLAGS },
 	{ "ignoreblkid",            TWFLAG_IGNOREBLKID },
 	{ "length=",                TWFLAG_LENGTH },
@@ -216,7 +221,6 @@ const struct flag_list tw_flags[] = {
 	{ "wrappedkey",             TWFLAG_WRAPPEDKEY },
 	{ "adopted_mount_delay=",   TWFLAG_ADOPTED_MOUNT_DELAY },
 	{ "dm_use_original_path",   TWFLAG_DM_USE_ORIGINAL_PATH },
-	{ "fscompress",             TWFLAG_FS_COMPRESS },
 	{ "logical",                TWFLAG_LOGICAL },
 	{ 0,                        0 },
 };
@@ -249,6 +253,7 @@ TWPartition::TWPartition() {
 	Backup_Size = 0;
 	Can_Be_Encrypted = false;
 	Is_Encrypted = false;
+	Is_Compressed = false;
 	Is_Decrypted = false;
 	Is_FBE = false;
 	Mount_To_Decrypt = false;
@@ -285,7 +290,6 @@ TWPartition::TWPartition() {
 	Adopted_Mount_Delay = 0;
 	Original_Path = "";
 	Use_Original_Path = false;
-	Needs_Fs_Compress = false;
 }
 
 TWPartition::~TWPartition(void) {
@@ -472,9 +476,8 @@ bool TWPartition::Process_Fstab_Line(const char *fstab_line, bool Display_Error,
 			Backup_Name = "system";
 			Backup_Display_Name = Display_Name;
 			Storage_Name = Display_Name;
-			Wipe_Available_in_GUI = false;
-			Can_Be_Backed_Up = false;
-			Can_Be_Wiped = false;
+			Wipe_Available_in_GUI = true;
+			Can_Be_Backed_Up = true;
 			Make_Dir(PartitionManager.Get_Android_Root_Path(), true);
 		} else if (Mount_Point == "/system_ext") {
 			Display_Name = "System_EXT";
@@ -657,6 +660,8 @@ bool TWPartition::Process_Fstab_Line(const char *fstab_line, bool Display_Error,
 	if (Mount_Point == "/persist" && Can_Be_Mounted) {
 		bool mounted = Is_Mounted();
 		if (mounted || Mount(false)) {
+			// Read the backup settings file
+			DataManager::LoadPersistValues();
 			TWFunc::Fixup_Time_On_Boot("/persist/time/");
 			if (!mounted)
 				UnMount(false);
@@ -781,57 +786,57 @@ bool TWPartition::Decrypt_FBE_DE() {
 		PartitionManager.Set_Crypto_Type("file");
 		LOGINFO("File Based Encryption is present\n");
 #ifdef TW_INCLUDE_FBE
-	Is_FBE = true;
-	ExcludeAll(Mount_Point + "/convert_fbe");
-	ExcludeAll(Mount_Point + "/unencrypted");
-	ExcludeAll(Mount_Point + "/misc/vold/user_keys");
-	ExcludeAll(Mount_Point + "/misc/vold/volume_keys");
-	ExcludeAll(Mount_Point + "/system/gatekeeper.password.key");
-	ExcludeAll(Mount_Point + "/system/gatekeeper.pattern.key");
-	ExcludeAll(Mount_Point + "/system/locksettings.db");
-	ExcludeAll(Mount_Point + "/system/locksettings.db-wal");
-	ExcludeAll(Mount_Point + "/misc/gatekeeper");
-	ExcludeAll(Mount_Point + "/misc/keystore");
-	ExcludeAll(Mount_Point + "/drm/kek.dat");
-	ExcludeAll(Mount_Point + "/system_de/0/spblob");  // contains data needed to decrypt synthetic password
-	ExcludeAll(Mount_Point + "/system/users/0/gatekeeper.password.key");
-	ExcludeAll(Mount_Point + "/system/users/0/gatekeeper.pattern.key");
-	ExcludeAll(Mount_Point + "/cache");
-	ExcludeAll(Mount_Point + "/per_boot"); // removed each boot by init
-	ExcludeAll(Mount_Point + "/gsi"); // cow devices
+		Is_FBE = true;
+		ExcludeAll(Mount_Point + "/convert_fbe");
+		ExcludeAll(Mount_Point + "/unencrypted");
+		ExcludeAll(Mount_Point + "/misc/vold/user_keys");
+		ExcludeAll(Mount_Point + "/misc/vold/volume_keys");
+		ExcludeAll(Mount_Point + "/system/gatekeeper.password.key");
+		ExcludeAll(Mount_Point + "/system/gatekeeper.pattern.key");
+		ExcludeAll(Mount_Point + "/system/locksettings.db");
+		ExcludeAll(Mount_Point + "/system/locksettings.db-wal");
+		ExcludeAll(Mount_Point + "/misc/gatekeeper");
+		ExcludeAll(Mount_Point + "/misc/keystore");
+		ExcludeAll(Mount_Point + "/drm/kek.dat");
+		ExcludeAll(Mount_Point + "/system_de/0/spblob");  // contains data needed to decrypt synthenic password
+		ExcludeAll(Mount_Point + "/system/users/0/gatekeeper.password.key");
+		ExcludeAll(Mount_Point + "/system/users/0/gatekeeper.pattern.key");
+		ExcludeAll(Mount_Point + "/cache");
+		ExcludeAll(Mount_Point + "/per_boot"); // removed each boot by init
+		ExcludeAll(Mount_Point + "/gsi"); // cow devices
 
-	int retry_count = 3;
-	while (!android::keystore::Decrypt_DE() && --retry_count)
-		usleep(2000);
-	if (retry_count > 0) {
-		PartitionManager.Set_Crypto_State();
-		Is_Encrypted = true;
-		Is_Decrypted = false;
-		DataManager::SetValue(TW_IS_ENCRYPTED, 1);
-		string filename;
-		int pwd_type = android::keystore::Get_Password_Type(0, filename);
-		if (pwd_type < 0) {
-			LOGERR("This TWRP does not have synthetic password decrypt support\n");
-			pwd_type = 0;  // default password
-		}
-		PartitionManager.Parse_Users();  // after load_all_de_keys() to parse_users
-		std::vector<users_struct>::iterator iter;
-		std::vector<users_struct>* userList = PartitionManager.Get_Users_List();
-		for (iter = userList->begin(); iter != userList->end(); iter++) {
-			if (atoi((*iter).userId.c_str()) != 0) {
-				ExcludeAll(Mount_Point + "/system_de/" + (*iter).userId + "/spblob");
-				ExcludeAll(Mount_Point + "/system/users/" + (*iter).userId + "/gatekeeper.password.key");
-				ExcludeAll(Mount_Point + "/system/users/" + (*iter).userId + "/gatekeeper.pattern.key");
-				ExcludeAll(Mount_Point + "/system/users/" + (*iter).userId + "/locksettings.db");
-				ExcludeAll(Mount_Point + "/system/users/" + (*iter).userId + "/locksettings.db-wal");
+		int retry_count = 3;
+		while (!android::keystore::Decrypt_DE() && --retry_count)
+			usleep(2000);
+		if (retry_count > 0) {
+			PartitionManager.Set_Crypto_State();
+			Is_Encrypted = true;
+			Is_Decrypted = false;
+			DataManager::SetValue(TW_IS_ENCRYPTED, 1);
+			string filename;
+			int pwd_type = android::keystore::Get_Password_Type(0, filename);
+			if (pwd_type < 0) {
+				LOGERR("This TWRP does not have synthetic password decrypt support\n");
+				pwd_type = 0;  // default password
 			}
+			PartitionManager.Parse_Users();  // after load_all_de_keys() to parse_users
+			std::vector<users_struct>::iterator iter;
+			std::vector<users_struct>* userList = PartitionManager.Get_Users_List();
+			for (iter = userList->begin(); iter != userList->end(); iter++) {
+				if (atoi((*iter).userId.c_str()) != 0) {
+					ExcludeAll(Mount_Point + "/system_de/" + (*iter).userId + "/spblob");
+					ExcludeAll(Mount_Point + "/system/users/" + (*iter).userId + "/gatekeeper.password.key");
+					ExcludeAll(Mount_Point + "/system/users/" + (*iter).userId + "/gatekeeper.pattern.key");
+					ExcludeAll(Mount_Point + "/system/users/" + (*iter).userId + "/locksettings.db");
+					ExcludeAll(Mount_Point + "/system/users/" + (*iter).userId + "/locksettings.db-wal");
+				}
+			}
+			DataManager::SetValue(TW_CRYPTO_PWTYPE, pwd_type);
+			DataManager::SetValue("tw_crypto_pwtype_0", pwd_type);
+			DataManager::SetValue(TW_CRYPTO_PASSWORD, "");
+			DataManager::SetValue("tw_crypto_display", "");
+			return true;
 		}
-		DataManager::SetValue(TW_CRYPTO_PWTYPE, pwd_type);
-		DataManager::SetValue("tw_crypto_pwtype_0", pwd_type);
-		DataManager::SetValue(TW_CRYPTO_PASSWORD, "");
-		DataManager::SetValue("tw_crypto_display", "");
-		return true;
-	}
 #else
 		LOGERR("FBE found but FBE support not present in TWRP\n");
 #endif
@@ -996,6 +1001,9 @@ void TWPartition::Apply_TW_Flag(const unsigned flag, const char* str, const bool
 		case TWFLAG_FLASHIMG:
 			Can_Flash_Img = val;
 			break;
+		case TWFLAG_FSCOMPRESS:
+			Is_Compressed = val;
+			break;
 		case TWFLAG_FSFLAGS:
 			Process_FS_Flags(str);
 			break;
@@ -1071,14 +1079,6 @@ void TWPartition::Apply_TW_Flag(const unsigned flag, const char* str, const bool
 			break;
 		case TWFLAG_LOGICAL:
 			Is_Super = true;
-			break;
-		case TWFLAG_FS_COMPRESS:
-			#ifdef TW_ENABLE_FS_COMPRESSION
-				Needs_Fs_Compress = true;
-				LOGINFO("Enabling 'fs compression'\n");
-			#else
-				LOGINFO("Ignoring the 'fscompress' fstab flag\n");
-			#endif
 			break;
 		default:
 			// Should not get here
@@ -1275,9 +1275,6 @@ void TWPartition::Setup_Data_Media() {
 			Storage_Path = Mount_Point + "/media/0";
 			Symlink_Path = Storage_Path;
 			DataManager::SetValue(TW_INTERNAL_PATH, Mount_Point + "/media/0");
-			#ifndef TW_INCLUDE_CRYPTO
-				DataManager::SetValue("tw_settings_path", TW_STORAGE_PATH);
-			#endif
 			UnMount(true);
 		}
 		DataManager::SetValue("tw_has_internal", 1);
@@ -1585,7 +1582,7 @@ bool TWPartition::Mount(bool Display_Error) {
 		string cmd = "/system/bin/exfat-fuse -o big_writes,max_read=131072,max_write=131072 " + Actual_Block_Device + " " + Mount_Point;
 		LOGINFO("cmd: %s\n", cmd.c_str());
 		string result;
-		if (TWFunc::Exec_Cmd(cmd, result, false) != 0) {
+		if (TWFunc::Exec_Cmd(cmd, result) != 0) {
 			LOGINFO("exfat-fuse failed to mount with result '%s', trying vfat\n", result.c_str());
 			Current_File_System = "vfat";
 		} else {
@@ -1715,10 +1712,22 @@ bool TWPartition::Bind_Mount(bool Display_Error) {
 			return false;
 		}
 	}
+
+ #ifndef TW_NO_BIND_SYSTEM
+	if (Mount_Point == "/system_root") {
+		unlink("/system");
+		mkdir("/system", 0755);
+		mount("/system_root/system", "/system", "auto", MS_BIND, NULL);
+	}
+#endif
 	return true;
 }
 
 bool TWPartition::UnMount(bool Display_Error, int flags) {
+	if (Mount_Point == "/system_root") {
+		if (umount("/system") == -1)
+			umount2("/system", MNT_DETACH);
+	}
 	if (Is_Mounted()) {
 		int never_unmount_system;
 
@@ -1838,6 +1847,7 @@ bool TWPartition::Wipe(string New_File_System) {
 		if (Mount_Point == PartitionManager.Get_Android_Root_Path()) {
 			tw_set_default_metadata(PartitionManager.Get_Android_Root_Path().c_str());
 		}
+
 		if (update_crypt) {
 			Setup_File_System(false);
 			if (Is_Encrypted && !Is_Decrypted) {
@@ -2082,9 +2092,10 @@ bool TWPartition::Backup(PartitionSettings *part_settings, pid_t *tar_fork_pid) 
 }
 
 bool TWPartition::Restore(PartitionSettings *part_settings) {
+	if (DataManager::GetIntValue(PB_RUN_SURVIVAL_BACKUP) != 1) {
 	TWFunc::GUI_Operation_Text(TW_RESTORE_TEXT, Display_Name, gui_parse_text("{@restoring_hdr}"));
 	LOGINFO("Restore filename is: %s/%s\n", part_settings->Backup_Folder.c_str(), Backup_FileName.c_str());
-
+    }
 	string Restore_File_System = Get_Restore_File_System(part_settings);
 
 	if (Is_File_System(Restore_File_System))
@@ -2155,6 +2166,7 @@ bool TWPartition::Wipe_Encryption() {
 #ifdef TW_INCLUDE_CRYPTO
 	if (!UnMount(true))
 		return false;
+	umount("/sdcard"); // Hack
 	if (Is_Decrypted && !Decrypted_Block_Device.empty()) {
 		if (delete_crypto_blk_dev((char*)("userdata")) != 0) {
 			LOGERR("Error deleting crypto block device, continuing anyway.\n");
@@ -2363,6 +2375,7 @@ bool TWPartition::Wipe_EXT4() {
 
 	char *secontext = NULL;
 
+    if (DataManager::GetIntValue(PB_RUN_SURVIVAL_BACKUP) != 1)
 	gui_msg(Msg("formatting_using=Formatting {1} using {2}...")(Display_Name)("make_ext4fs"));
 
 	if (!selinux_handle || selabel_lookup(selinux_handle, &secontext, Mount_Point.c_str(), S_IFDIR) < 0) {
@@ -2527,7 +2540,7 @@ bool TWPartition::Wipe_F2FS() {
 	if(needs_casefold)
 		f2fs_command += " -O casefold -C utf8";
 
-	if (Needs_Fs_Compress)
+	if(Is_Compressed)
 		f2fs_command += " -O compression,extra_attr";
 
 	f2fs_command += " " + Actual_Block_Device + " " + dev_sz_str;
@@ -2693,9 +2706,11 @@ bool TWPartition::Backup_Tar(PartitionSettings *part_settings, pid_t *tar_fork_p
 	if (!Mount(true))
 		return false;
 
+	if (DataManager::GetIntValue(PB_RUN_SURVIVAL_BACKUP) != 1) {
 	TWFunc::GUI_Operation_Text(TW_BACKUP_TEXT, Backup_Display_Name, gui_parse_text("{@backing}"));
 	gui_msg(Msg("backing_up=Backing up {1}...")(Backup_Display_Name));
-
+	}
+	
 	DataManager::GetValue(TW_USE_COMPRESSION_VAR, tar.use_compression);
 
 #ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
@@ -2748,8 +2763,10 @@ bool TWPartition::Backup_Tar(PartitionSettings *part_settings, pid_t *tar_fork_p
 bool TWPartition::Backup_Image(PartitionSettings *part_settings) {
 	string Full_FileName, adb_file_name;
 
+	if (DataManager::GetIntValue(PB_RUN_SURVIVAL_BACKUP) != 1) {
 	TWFunc::GUI_Operation_Text(TW_BACKUP_TEXT, Display_Name, gui_parse_text("{@backing}"));
 	gui_msg(Msg("backing_up=Backing up {1}...")(Backup_Display_Name));
+    }
 
 	Backup_FileName = Backup_Name + "." + Current_File_System + ".win";
 
@@ -2778,7 +2795,7 @@ bool TWPartition::Backup_Image(PartitionSettings *part_settings) {
 }
 
 bool TWPartition::Raw_Read_Write(PartitionSettings *part_settings) {
-	unsigned long long RW_Block_Size, Remain = Backup_Size;
+	unsigned long long PB_Block_Size, Remain = Backup_Size;
 	int src_fd = -1, dest_fd = -1;
 	ssize_t bs;
 	bool ret = false;
@@ -2822,12 +2839,12 @@ bool TWPartition::Raw_Read_Write(PartitionSettings *part_settings) {
 	LOGINFO("Reading '%s', writing '%s'\n", srcfn.c_str(), destfn.c_str());
 
 	if (part_settings->adbbackup) {
-		RW_Block_Size = MAX_ADB_READ;
+		PB_Block_Size = MAX_ADB_READ;
 		bs = MAX_ADB_READ;
 	}
 	else {
-		RW_Block_Size = 1048576LLU; // 1MB
-		bs = (ssize_t)(RW_Block_Size);
+		PB_Block_Size = 1048576LLU; // 1MB
+		bs = (ssize_t)(PB_Block_Size);
 	}
 
 	buffer = malloc((size_t)bs);
@@ -2840,7 +2857,7 @@ bool TWPartition::Raw_Read_Write(PartitionSettings *part_settings) {
 		part_settings->progress->SetPartitionSize(part_settings->total_restore_size);
 
 	while (Remain > 0) {
-		if (Remain < RW_Block_Size)
+		if (Remain < PB_Block_Size)
 			bs = (ssize_t)(Remain);
 		if (read(src_fd, buffer, bs) != bs) {
 			LOGINFO("Error reading source fd (%s)\n", strerror(errno));
@@ -2880,9 +2897,11 @@ exit:
 bool TWPartition::Backup_Dump_Image(PartitionSettings *part_settings) {
 	string Full_FileName, Command;
 
+	if (DataManager::GetIntValue(PB_RUN_SURVIVAL_BACKUP) != 1) {
 	TWFunc::GUI_Operation_Text(TW_BACKUP_TEXT, Display_Name, gui_parse_text("{@backing}"));
 	gui_msg(Msg("backing_up=Backing up {1}...")(Backup_Display_Name));
-
+    }
+	
 	if (part_settings->progress)
 		part_settings->progress->SetPartitionSize(Backup_Size);
 
@@ -2950,7 +2969,9 @@ bool TWPartition::Restore_Tar(PartitionSettings *part_settings) {
 		if (!Wipe_AndSec())
 			return false;
 	} else {
+		if (DataManager::GetIntValue(PB_RUN_SURVIVAL_BACKUP) != 1) {
 		gui_msg(Msg("wiping=Wiping {1}")(Backup_Display_Name));
+		}
 		if (Has_Data_Media && Mount_Point == "/data" && Restore_File_System != Current_File_System) {
 			gui_msg(Msg(msg::kWarning, "datamedia_fs_restore=WARNING: This /data backup was made with {1} file system! The backup may not boot unless you change back to {1}.")(Restore_File_System));
 			if (!Wipe_Data_Without_Wiping_Media())
@@ -2960,8 +2981,10 @@ bool TWPartition::Restore_Tar(PartitionSettings *part_settings) {
 				return false;
 		}
 	}
+	if (DataManager::GetIntValue(PB_RUN_SURVIVAL_BACKUP) != 1) {
 	TWFunc::GUI_Operation_Text(TW_RESTORE_TEXT, Backup_Display_Name, gui_parse_text("{@restoring_hdr}"));
 	gui_msg(Msg("restoring=Restoring {1}...")(Backup_Display_Name));
+     }
 
 	// Remount as read/write as needed so we can restore the backup
 	if (!ReMount_RW(true))
@@ -3014,9 +3037,11 @@ bool TWPartition::Restore_Image(PartitionSettings *part_settings) {
 	string Full_FileName;
 	string Restore_File_System = Get_Restore_File_System(part_settings);
 
+	if (DataManager::GetIntValue(PB_RUN_SURVIVAL_BACKUP) != 1) {
 	TWFunc::GUI_Operation_Text(TW_RESTORE_TEXT, Backup_Display_Name, gui_parse_text("{@restoring_hdr}"));
 	gui_msg(Msg("restoring=Restoring {1}...")(Backup_Display_Name));
-
+    }
+	
 	if (part_settings->adbbackup)
 		Full_FileName = TW_ADB_RESTORE;
 	else
@@ -3204,11 +3229,11 @@ void TWPartition::Find_Actual_Block_Device(void) {
 	}
 }
 
-void TWPartition::Recreate_Media_Folder(void) {
+void TWPartition::Recreate_Media_Folder(bool wiped) {
 	string Command;
 	string Media_Path = Mount_Point + "/media";
 
-	if (Is_FBE) {
+	if (Is_FBE && !wiped) {
 		LOGINFO("Not recreating media folder on FBE\n");
 		return;
 	}
@@ -3601,6 +3626,10 @@ void TWPartition::Set_Can_Be_Backed_Up(bool val) {
 void TWPartition::Set_Can_Be_Wiped(bool val) {
 	Can_Be_Wiped = val;
 	Wipe_Available_in_GUI = val;
+}
+
+void TWPartition::Change_Mount_Point(string new_mp) {
+	Storage_Path = Backup_Path = Mount_Point = new_mp;
 }
 
 std::string TWPartition::Get_Backup_FileName() {

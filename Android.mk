@@ -1,4 +1,5 @@
 # Copyright (C) 2007 The Android Open Source Project
+# Copyright (C) 2018 ATG Droid  
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -47,12 +48,36 @@ TARGET_RECOVERY_GUI := true
 LOCAL_STATIC_LIBRARIES :=
 LOCAL_SHARED_LIBRARIES :=
 
-ifneq ($(TW_DEVICE_VERSION),)
-    LOCAL_CFLAGS += -DTW_DEVICE_VERSION='"-$(TW_DEVICE_VERSION)"'
+ifeq ($(PB_OFFICIAL),true)
+    LOCAL_CFLAGS += -DPB_MAIN_BUILD='"-OFFICIAL"'
+else ifeq ($(BETA_BUILD),true)
+    LOCAL_CFLAGS += -DPB_MAIN_BUILD='"-BETA"'
 else
-    LOCAL_CFLAGS += -DTW_DEVICE_VERSION='"-0"'
+    LOCAL_CFLAGS += -DPB_MAIN_BUILD='"-UNOFFICIAL"'
+endif
+
+DEVICE := $(subst pb_,,$(TARGET_PRODUCT))
+
+ifeq ($(PB_DEVICE_MODEL),)
+    LOCAL_CFLAGS += -DPB_DEVICE_MODEL='"$(DEVICE)"'
 endif
 LOCAL_CFLAGS += -DPLATFORM_SDK_VERSION=$(PLATFORM_SDK_VERSION)
+LOCAL_CFLAGS += -DBUILD='"$(shell date -u +%d/%m/%Y)"'
+ifneq ($(MAINTAINER),)
+    LOCAL_CFLAGS += -DMTAINER='"$(MAINTAINER)"'
+endif
+
+ifeq ($(PB_FORCE_DD_FLASH),true)
+    LOCAL_CFLAGS += -DPB_FORCE_DD_FLASH='true'
+endif
+LOCAL_CFLAGS += -DPLATFORM_SDK_VERSION=$(PLATFORM_SDK_VERSION)
+
+ifeq ($(PB_DISABLE_DEFAULT_TREBLE_COMP),true)
+    LOCAL_CFLAGS += -DPB_DISABLE_DEFAULT_TREBLE_COMP=$(PB_DISABLE_DEFAULT_TREBLE_COMP)
+endif
+ifneq ($(PB_TORCH_MAX_BRIGHTNESS),)
+	LOCAL_CFLAGS += -DPB_MAX_BRIGHT_VALUE=\"$(PB_TORCH_BRIGHTNESS_MAX)\"
+endif
 
 LOCAL_SRC_FILES := \
     twrp.cpp \
@@ -71,7 +96,8 @@ LOCAL_SRC_FILES := \
     openrecoveryscript.cpp \
     tarWrite.c \
     twrpAdbBuFifo.cpp \
-    twrpRepacker.cpp
+    twrpRepacker.cpp \
+    pbfun.cpp
 
 ifeq ($(TW_EXCLUDE_APEX),)
     LOCAL_SRC_FILES += twrpApex.cpp
@@ -150,6 +176,7 @@ ifeq ($(TW_OEM_BUILD),true)
 endif
 
 ifeq ($(AB_OTA_UPDATER),true)
+    LOCAL_CFLAGS += -DTW_INCLUDE_INJECTTWRP
     LOCAL_CFLAGS += -DAB_OTA_UPDATER=1
     TWRP_REQUIRED_MODULES += libhardware android.hardware.boot@1.0-service android.hardware.boot@1.0-service.rc \
     android.hardware.boot@1.1-service android.hardware.boot@1.1-service.rc android.hardware.boot@1.1.xml \
@@ -179,24 +206,8 @@ ifeq ($(BOARD_MOVE_RECOVERY_RESOURCES_TO_VENDOR_BOOT),true)
     LOCAL_CFLAGS += -DBOARD_MOVE_RECOVERY_RESOURCES_TO_VENDOR_BOOT
 endif
 
-ifeq ($(TW_USES_VENDOR_LIBS),true)
-    LOCAL_CFLAGS += -DUSE_VENDOR_LIBS=1
-endif
-
-ifeq ($(TW_NO_BIND_SYSTEM),true)
-    LOCAL_CFLAGS += -DTW_NO_BIND_SYSTEM
-endif
-
-ifeq ($(TW_NO_FLASH_CURRENT_TWRP),true)
-    LOCAL_CFLAGS += -DTW_NO_FLASH_CURRENT_TWRP
-endif
-
 ifeq ($(TW_PREPARE_DATA_MEDIA_EARLY),true)
     LOCAL_CFLAGS += -DTW_PREPARE_DATA_MEDIA_EARLY
-endif
-
-ifeq ($(TW_ENABLE_FS_COMPRESSION),true)
-    LOCAL_CFLAGS += -DTW_ENABLE_FS_COMPRESSION
 endif
 
 LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)/system/bin
@@ -282,9 +293,6 @@ ifeq ($(TW_NEVER_UNMOUNT_SYSTEM), true)
 endif
 ifeq ($(TW_NO_USB_STORAGE), true)
     LOCAL_CFLAGS += -DTW_NO_USB_STORAGE
-endif
-ifeq ($(TW_INCLUDE_INJECTTWRP), true)
-    LOCAL_CFLAGS += -DTW_INCLUDE_INJECTTWRP
 endif
 ifeq ($(TW_INCLUDE_BLOBPACK), true)
     LOCAL_CFLAGS += -DTW_INCLUDE_BLOBPACK
@@ -431,6 +439,12 @@ endif
 ifneq ($(TW_CLOCK_OFFSET),)
 	LOCAL_CFLAGS += -DTW_CLOCK_OFFSET=$(TW_CLOCK_OFFSET)
 endif
+ifeq ($(PB_DONT_MOUNT_SYSTEM_AS_ROOT), true)
+	LOCAL_CFLAGS += -DPB_DONT_MOUNT_SYSTEM_AS_ROOT
+endif
+
+TW_INCLUDE_REPACKTOOLS := true
+
 ifneq ($(TW_OVERRIDE_SYSTEM_PROPS),)
     TW_INCLUDE_LIBRESETPROP := true
     LOCAL_CFLAGS += -DTW_OVERRIDE_SYSTEM_PROPS=$(TW_OVERRIDE_SYSTEM_PROPS)
@@ -443,9 +457,7 @@ ifneq ($(TW_INCLUDE_LIBRESETPROP),)
     LOCAL_C_INCLUDES += external/magisk-prebuilt/include
     LOCAL_CFLAGS += -DTW_INCLUDE_LIBRESETPROP
 endif
-ifeq ($(TW_EXCLUDE_NANO), true)
-    LOCAL_CFLAGS += -DTW_EXCLUDE_NANO
-endif
+
 ifneq ($(TARGET_OTA_ASSERT_DEVICE),)
     LOCAL_CFLAGS += -DTARGET_OTA_ASSERT_DEVICE='"$(TARGET_OTA_ASSERT_DEVICE)"'
 endif
@@ -498,9 +510,6 @@ TWRP_REQUIRED_MODULES += \
     minadbd \
     twrpbu \
     adbd_system_api_recovery \
-    me.twrp.twrpapp.apk \
-    privapp-permissions-twrpapp.xml \
-    adbd_system_api_recovery \
     libsync.recovery \
     libandroidicu.recovery \
     android.hardware.health@2.1-service \
@@ -514,19 +523,6 @@ TWRP_REQUIRED_MODULES += \
 ifneq ($(TW_EXCLUDE_TZDATA), true)
 TWRP_REQUIRED_MODULES += \
     tzdata_twrp
-endif
-
-ifneq ($(TW_EXCLUDE_NANO), true)
-TWRP_REQUIRED_MODULES += \
-    nano_twrp \
-    nano.rc
-endif
-
-ifneq ($(TW_EXCLUDE_BASH), true)
-    ifneq ($(wildcard external/bash/.),)
-    TWRP_REQUIRED_MODULES += \
-        bash_twrp
-    endif
 endif
 
 ifeq ($(TW_INCLUDE_REPACKTOOLS), true)
@@ -550,6 +546,19 @@ TWRP_REQUIRED_MODULES += \
     vndservicemanager \
     vndservicemanager.rc
 
+ifneq ($(TW_EXCLUDE_NANO), true)
+TWRP_REQUIRED_MODULES += \
+    nano_twrp \
+    nano.rc
+endif
+
+ifneq ($(TW_EXCLUDE_BASH), true)
+    ifneq ($(wildcard external/bash/.),)
+    TWRP_REQUIRED_MODULES += \
+        bash_twrp
+    endif
+endif
+
 ifneq ($(TW_INCLUDE_CRYPTO),)
 TWRP_REQUIRED_MODULES += \
     vold_prepare_subdirs \
@@ -567,6 +576,19 @@ TWRP_REQUIRED_MODULES += \
         servicemanager \
         servicemanager.rc
     endif
+endif
+
+ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 26; echo $$?),0)
+TWRP_REQUIRED_MODULES += \
+    init.recovery.ldconfig.rc
+endif
+TWRP_REQUIRED_MODULES += \
+    parted \
+    magiskboot
+
+ifneq ($(TW_OZIP_DECRYPT_KEY),)
+TWRP_REQUIRED_MODULES += \
+    ozip_decrypt
 endif
 
 ifneq ($(wildcard external/zip/Android.mk),)
@@ -596,9 +618,6 @@ ifneq ($(TW_OEM_BUILD),true)
 endif
 ifeq ($(BOARD_USES_BML_OVER_MTD),true)
     TWRP_REQUIRED_MODULES += bml_over_mtd
-endif
-ifeq ($(TW_INCLUDE_INJECTTWRP), true)
-    TWRP_REQUIRED_MODULES += injecttwrp
 endif
 ifneq ($(TW_EXCLUDE_DEFAULT_USB_INIT), true)
     TWRP_REQUIRED_MODULES += init.recovery.usb.rc
@@ -672,6 +691,7 @@ include $(BUILD_EXECUTABLE)
 
 # recovery-refresh (system partition dynamic executable run at init)
 # ===============================
+
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES := \
     recovery-refresh.cpp
@@ -728,8 +748,7 @@ include $(commands_TWRP_local_path)/mtp/ffs/Android.mk \
     $(commands_TWRP_local_path)/minui/Android.mk
 
 #includes for TWRP
-include $(commands_TWRP_local_path)/injecttwrp/Android.mk \
-    $(commands_TWRP_local_path)/mmcutils/Android.mk \
+include $(commands_TWRP_local_path)/mmcutils/Android.mk \
     $(commands_TWRP_local_path)/bmlutils/Android.mk \
     $(commands_TWRP_local_path)/prebuilt/Android.mk \
     $(commands_TWRP_local_path)/mtdutils/Android.mk \
@@ -749,7 +768,6 @@ include $(commands_TWRP_local_path)/injecttwrp/Android.mk \
     $(commands_TWRP_local_path)/attr/Android.mk
 
 ifneq ($(TW_OZIP_DECRYPT_KEY),)
-    TWRP_REQUIRED_MODULES += ozip_decrypt
     include $(commands_TWRP_local_path)/ozip_decrypt/Android.mk
 endif
 

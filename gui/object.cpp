@@ -92,6 +92,23 @@ bool GUIObject::isConditionTrue(Condition* condition)
 	// This is used to hold the proper value of "true" based on the '!' NOT flag
 	bool bTrue = true;
 
+	int found = 0;
+	int pos[2] = {0, 0};
+	for (int i = 1; i <= 2; i++) {
+		string Var = i == 1 ? condition->mVar1 : condition->mVar2;
+		if (Var.find('%') == string::npos) continue;
+		for (int iter = Var.find('%'); iter < Var.length(); iter = Var.find('%', iter+1)) {
+			pos[found++] = iter + 1;
+			if (found == 2) {
+				found = 0;
+				string data;
+				LOGINFO("%d %d %s\n", pos[0], pos[1], Var.substr(pos[0], pos[1] - pos[0] - 1).c_str());
+				DataManager::GetValue(Var.substr(pos[0], pos[1] - pos[0] - 1), data);
+				(i == 1 ? condition->mVar1 : condition->mVar2).replace(pos[0] - 1, pos[1] - pos[0] + 1, data);
+			}
+		}
+	}
+
 	if (condition->mVar1.empty())
 		return bTrue;
 
@@ -121,6 +138,14 @@ bool GUIObject::isConditionTrue(Condition* condition)
 	{
 		struct stat st;
 		if (stat(var2.c_str(), &st) == 0)
+			var2 = var1;
+		else
+			var2 = "FAILED";
+	}
+	if (var1 == "filenotexists")
+	{
+		struct stat st;
+		if (stat(var2.c_str(), &st) != 0)
 			var2 = var1;
 		else
 			var2 = "FAILED";
@@ -167,6 +192,20 @@ int GUIObject::NotifyVarChange(const std::string& varName, const std::string& va
 {
 	mConditionsResult = UpdateConditions(mConditions, varName);
 	return 0;
+}
+
+bool GUIObject::UpdateAllConditions()
+{
+	bool Result=true;
+	std::vector<Condition>::iterator iter;
+	for (iter = mConditions.begin(); iter != mConditions.end(); ++iter)
+	{
+		Result=UpdateConditions(mConditions, iter->mVar1);
+		if (!Result)
+			break;
+	}
+	return Result;
+
 }
 
 bool GUIObject::UpdateConditions(std::vector<Condition>& conditions, const std::string& varName)

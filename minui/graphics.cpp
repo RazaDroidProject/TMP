@@ -25,14 +25,9 @@
 
 #include <android-base/properties.h>
 
-#ifdef BOARD_USE_CUSTOM_RECOVERY_FONT
-#include BOARD_USE_CUSTOM_RECOVERY_FONT
-#else
-#include "font_10x18.h"
-#endif
-
 #include "graphics_drm.h"
 #include "graphics_fbdev.h"
+#include "graphics_overlay.h"
 #include "minui/minui.h"
 
 static GRFont* gr_font = nullptr;
@@ -172,6 +167,30 @@ static void text_blend_old(unsigned char* src_p, int src_row_bytes,
     }
 }
 #endif // TW_NO_MINUI_CUSTOM_FONTS
+
+// Blends gr_current onto pix value, assumes alpha as most significant byte.
+static inline uint16_t pixel_blend16(uint8_t a, uint16_t pix) {
+  unsigned char orig[2];
+  orig[0] = (pix & 0xFF00) >> 8;
+  orig[1] = pix & 0x00FF;
+
+  /* This code is a little easier to read
+  unsigned oldred = (orig[1] >> 3);
+  unsigned oldgreen = (((orig[0] >> 5) << 3) + (orig[1] & 0x7));
+  unsigned oldblue = (orig[0] & 0x1F);
+
+  unsigned newred = (oldred * (255-a) + r5 * a) / 255;
+  unsigned newgreen = (oldgreen * (255-a) + g5 * a) / 255;
+  unsigned newblue = (oldblue * (255-a) + b5 * a) / 255;
+  */
+
+  unsigned newred = ((orig[1] >> 3) * (255-a) + gr_current_r5 * a) / 255;
+  unsigned newgreen = ((((orig[0] >> 5) << 3) + (orig[1] & 0x7)) * (255-a) + gr_current_g5 * a) / 255;
+  unsigned newblue = ((orig[0] & 0x1F) * (255-a) + gr_current_b5 * a) / 255;
+
+  uint16_t newpix = (newred << 10) + (newgreen << 5) + newblue;
+  return newpix;
+}
 
 // Blends gr_current onto pix value, assumes alpha as most significant byte.
 static inline uint32_t pixel_blend(uint8_t alpha, uint32_t pix) {
@@ -421,16 +440,20 @@ void gr_fill(int x1, int y1, int x2, int y2) {
       incr_y(&p, row_pixels);
     }
   }
+  } // close brace to maintain separation between uint16_t p and uint32_t p
 }
 
-void gr_blit_32to16(const GRSurface* source, int sx, int sy, int w, int h, int dx, int dy) {
+void gr_blit_32to16(GRSurface* source, int sx, int sy, int w, int h, int dx, int dy) {
+  if (rotation)
+    printf("gr_blit_32to16 does not support rotation!\n"); // but we'll draw something in the wrong spot anyway because, why not!
+
   dx += overscan_offset_x;
   dy += overscan_offset_y;
 
   if (outside(dx, dy) || outside(dx+w-1, dy+h-1)) return;
 
-  unsigned char* src_p = (unsigned char*) source->data() + sy*source->row_bytes + sx*source->pixel_bytes;
-  unsigned char* dst_p = gr_draw->data() + dy*gr_draw->row_bytes + dx*gr_draw->pixel_bytes;
+  unsigned char* src_p = source->data + sy*source->row_bytes + sx*source->pixel_bytes;
+  unsigned char* dst_p = gr_draw->data + dy*gr_draw->row_bytes + dx*gr_draw->pixel_bytes;
 
   int i, j;
   for (i = 0; i < h; ++i) {
@@ -588,7 +611,6 @@ int gr_init_font(const char* name, GRFont** dest) {
 
   return 0;
 }
-#endif // TW_NO_MINUI_CUSTOM_FONTS
 
 void gr_flip() {
   gr_draw = gr_backend->Flip();
@@ -637,7 +659,6 @@ int gr_init() {
         gr_draw = backend->Init();
         if (gr_draw)
             printf("Using fbdev graphics.\n");
-    }
 
   if (!gr_draw) {
     return -1;

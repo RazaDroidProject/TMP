@@ -3,6 +3,9 @@
 	Copyright 2013 to 2020 TeamWin
 	This file is part of TWRP/TeamWin Recovery Project.
 
+	Copyright 2018 ATG Droid  
+	This file is part of RWRP/RedWolf Recovery Project
+
 	TWRP is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
 	the Free Software Foundation, either version 3 of the License, or
@@ -830,8 +833,10 @@ int twrpTar::tarList(std::vector<TarListStruct> *TarList, unsigned thread_id) {
 				fs = 0; // Sending a 0 size to the pipe tells it to increment the file counter
 				write(progress_pipe_fd, &fs, sizeof(fs));
 			}
+			if (DataManager::GetIntValue(PB_RUN_SURVIVAL_BACKUP) != 1)
 			LOGINFO("addFile '%s' including root: %i\n", buf, include_root_dir);
 			if (addFile(buf, include_root_dir) != 0) {
+				if (DataManager::GetIntValue(PB_RUN_SURVIVAL_BACKUP) != 1)
 				LOGINFO("Error adding file '%s' to '%s'\n", buf, tarfn.c_str());
 				gui_err("backup_error=Error creating backup.");
 				return -1;
@@ -1478,7 +1483,7 @@ unsigned long long twrpTar::uncompressedSize(string filename) {
 		Command = "pigz -l '" + filename + "'";
 		/* if we set Command = "pigz -l " + tarfn + " | sed '1d' | cut -f5 -d' '";
 		we get the uncompressed size at once. */
-		TWFunc::Exec_Cmd(Command, result, false);
+		TWFunc::Exec_Cmd(Command, result);
 		if (!result.empty()) {
 			/* Expected output:
 			compressed original  reduced name
@@ -1503,7 +1508,7 @@ unsigned long long twrpTar::uncompressedSize(string filename) {
 			Command = "openaes dec --key \"" + password + "\" --in '" + filename + "' | pigz -l";
 			/* if we set Command = "pigz -l " + tarfn + " | sed '1d' | cut -f5 -d' '";
 			we get the uncompressed size at once. */
-			TWFunc::Exec_Cmd(Command, result, false);
+			TWFunc::Exec_Cmd(Command, result);
 			if (!result.empty()) {
 				LOGINFO("result was: '%s'\n", result.c_str());
 				/* Expected output:

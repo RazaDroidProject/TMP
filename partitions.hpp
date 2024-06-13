@@ -147,7 +147,7 @@ public:
 	bool Wipe_Encryption();                                                   // Ignores wipe commands for /data/media devices and formats the original block device
 	void Check_FS_Type();                                                     // Checks the fs type using blkid, does not do anything on MTD / yaffs2 because this crashes on some devices
 	bool Update_Size(bool Display_Error);                                     // Updates size information
-	void Recreate_Media_Folder();                                             // Recreates the /data/media folder
+	void Recreate_Media_Folder(bool wiped = false);                                             // Recreates the /data/media folder
 	bool Flash_Image(PartitionSettings *part_settings);                                        // Flashes an image to the partition
 	void Change_Mount_Read_Only(bool new_value);                              // Changes Mount_Read_Only to new_value
 	bool Is_Read_Only();                                                      // Check if system is read-only in TWRP
@@ -158,6 +158,7 @@ public:
 	void Set_Backup_FileName(string fname);                                   // Set backup filename for partition
 	std::string Get_Backup_FileName();                                        // Get the backup filename for the partition
 	string Get_Backup_Name();                                                 // Get Backup_Name for partition
+	void Change_Mount_Point(string new_mp);
 	bool Decrypt_FBE_DE();                                                    // If FBE is present, backup exclusions are set up and DE decrypt is attempted
 	string Get_Mount_Point();												  // Return Mount_Point or directory the current partition is mounted on
 	bool Get_Super_Status();												  // Returns true if partition is a super volume mounted partitions
@@ -260,6 +261,7 @@ private:
 	unsigned long long Restore_Size;                                          // Restore size of the current restore operation
 	bool Can_Be_Encrypted;                                                    // This partition might be encrypted, affects error handling, can only be true if crypto support is compiled in
 	bool Is_Encrypted;                                                        // This partition is thought to be encrypted -- it wouldn't mount for some reason, only avialble with crypto support
+	bool Is_Compressed;                                                       // This partition should be compressed
 	bool Is_Decrypted;                                                        // This partition has successfully been decrypted
 	bool Is_FBE;                                                              // File Based Encryption is present
 	bool Mount_To_Decrypt;                                                    // Mount this partition during decrypt (/vendor, /firmware, etc in case we need proprietary libs or firmware files)
@@ -288,7 +290,6 @@ private:
 	string Key_Directory;                                                     // Metadata key directory needed for mounting FBE encrypted data partitions using metadata encryption
 	string Original_Path;
 	bool Use_Original_Path;
-	bool Needs_Fs_Compress;
 
 	struct partition_fs_flags_struct {                                        // This struct is used to store mount flags and options for different file systems for the same partition
 		string File_System;
@@ -335,7 +336,11 @@ public:
 	TWPartition* Find_Partition_By_Block_Device(const string& Block_Device);  // Returns a pointer to a partition based on block device
 	int Check_Backup_Name(const std::string& Backup_Name, bool Display_Error, bool Must_Be_Unique); // Checks the current backup name to ensure that it is valid and optionally that a backup with that name doesn't already exist
 	int Run_Backup(bool adbbackup);                                           // Initiates a backup in the current storage
-	int Run_Restore(const string& Restore_Name);                              // Restores a backup
+	int Run_OTA_Survival_Backup(bool adbbackup);                              // Create backup for OTA survival in the internal storage
+    int Run_OTA_Survival_Restore(const string& Restore_Name);                 // Restore OTA survival
+    
+    
+    int Run_Restore(const string& Restore_Name);                              // Restores a backup
 	bool Write_ADB_Stream_Header(uint64_t partition_count);                   // Write ADB header over twrpbu FIFO
 	bool Write_ADB_Stream_Trailer();                                          // Write ADB trailer over twrpbu FIFO
 	void Set_Restore_Files(string Restore_Name);                              // Used to gather a list of available backup partitions for the user to select for a restore
@@ -343,7 +348,9 @@ public:
 	int Wipe_By_Path(string Path, string New_File_System);                    // Wipes a partition based on path
 	int Factory_Reset();                                                      // Performs a factory reset
 	int Wipe_Dalvik_Cache();                                                  // Wipes dalvik cache
-	int Wipe_Rotate_Data();                                                   // Wipes rotation data --
+	int Wipe_Substratum_Overlays();                                           // Wipe substratum overlays
+	int Wipe_Module();                                                        // Wipe modules magisk/ksu
+        int Wipe_Rotate_Data();                                                   // Wipes rotation data --
 	int Wipe_Battery_Stats();                                                 // Wipe battery stats -- /data/system/batterystats.bin
 	int Wipe_Android_Secure();                                                // Wipes android secure
 	int Format_Data();                                                        // Really formats data on /data/media devices -- also removes encryption
@@ -351,6 +358,7 @@ public:
 	int Repair_By_Path(string Path, bool Display_Error);                      // Repairs a partition based on path
 	int Resize_By_Path(string Path, bool Display_Error);                      // Resizes a partition based on path
 	void Update_System_Details();                                             // Updates fstab, file systems, sizes, etc.
+	void Update_System_Details_OTA_Survival();                                             // Updates fstab, file systems, sizes, etc.
 	int Decrypt_Device(string Password, int user_id = 0);                     // Attempt to decrypt any encrypted partitions
 	void Parse_Users();                                                       // Parse FBE users
 	int usb_storage_enable(void);                                             // Enable USB storage mode
@@ -381,6 +389,8 @@ public:
 	void Remove_Partition_By_Path(string Path);                               // Removes / erases a partition entry from the partition list
 	bool Prepare_All_Super_Volumes();										  // Prepare all known super volumes from super partition
 	bool Flash_Image(string& path, string& filename);                         // Flashes an image to a selected partition from the partition list
+	bool Flash_Repacked_Image(string& path, string& filename, bool recovery); // Reflash repacked image...
+	
 	bool Restore_Partition(struct PartitionSettings *part_settings);          // Restore the partitions based on type
 	TWAtomicInt stop_backup;
 	void Override_Active_Slot(const string& Slot);                            // Override the active slot for repacking
@@ -403,6 +413,7 @@ public:
 	bool Get_Super_Status();												  // Return whether device has a super partition
 	void Setup_Super_Partition();											  // Setup the super partition for backup and restore
 	bool Recreate_Logs_Dir();                                                 // Recreate TWRP_AB_LOGS_DIR after wipe
+	void Change_System_Root(bool root);
 	std::vector<users_struct>* Get_Users_List();                              // Returns pointer to list of users
 	void Set_Crypto_State();                                                  // Sets encryption state for devices (ro.crypto.state)
 	int Set_Crypto_Type(const char* crypto_type);                             // Sets encryption type for FDE (block) and FBE (file) devices (ro.crypto.type)
@@ -431,6 +442,7 @@ private:
 	std::string repacked_ramdisk_format;                                      // Ramdisk format of boot image to repack from
 	void Mark_User_Decrypted(int userID);                                     // Marks given user ID in Users_List as decrypted
 	void Check_Users_Decryption_Status();                                     // Checks to see if all users are decrypted
+
 
 private:
 	std::vector<TWPartition*> Partitions;                                     // Vector list of all partitions
