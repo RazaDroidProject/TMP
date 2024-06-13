@@ -5,10 +5,10 @@
 
 	<resources>
 		<!-- Font overrides - only change these if your language requires special characters -->
-		<resource name="font_l" type="fontoverride" filename="RobotoCondensed-Regular.ttf" scale="100" />
-		<resource name="font_m" type="fontoverride" filename="RobotoCondensed-Regular.ttf" scale="100" />
-		<resource name="font_s" type="fontoverride" filename="RobotoCondensed-Regular.ttf" scale="100" />
-		<resource name="fixed" type="fontoverride" filename="DroidSansMono.ttf" scale="100" />
+		<resource name="font_l" type="fontoverride" filename="pb.ttf" scale="100" />
+		<resource name="font_m" type="fontoverride" filename="pb.ttf" scale="100" />
+		<resource name="font_s" type="fontoverride" filename="pb.ttf" scale="100" />
+		<resource name="fixed" type="fontoverride" filename="pb.ttf" scale="100" />
 
 		<!-- Partition display names -->
 		<string name="system">System</string>
@@ -30,10 +30,9 @@
 		<string name="sdext">SD-EXT</string>
 		<string name="adopted_data">Eingegliederte Daten-Partition</string>
 		<string name="adopted_storage">Eingegliederte Storage-Partition</string>
-		<string name="autostorage">Storage-Partition</string>
 
 		<!-- GUI XML strings -->
-		<string name="twrp_header">Team Win Recovery Project</string>
+		<string name="twrp_header">PitchBlack Recovery Project</string>
 		<string name="twrp_watch_header">TWRP %tw_version%</string>
 		<string name="cpu_temp">CPU: %tw_cpu_temp% &#xB0;C</string>
 		<string name="battery_pct">Akku: %tw_battery%</string>
@@ -99,7 +98,6 @@
 		<string name="install_failed">Installation fehlgeschlagen</string>
 		<string name="install_successful">Installation erfolgreich</string>
 		<string name="wipe_cache_dalvik_btn">Cache/Dalvik löschen</string>
-		<string name="wipe_dalvik_btn">Dalvik löschen</string>
 		<string name="reboot_system_btn">System neustarten</string>
 		<string name="install_sel_target">Ziel-Partition auswählen</string>
 		<string name="flash_image_select">Partition wählen, um das Image zu einzuspielen:</string>
@@ -107,10 +105,8 @@
 		<string name="flashing_image">Spiele Image ein...</string>
 		<string name="image_flashed">Image eingespielt</string>
 		<string name="wipe_cache_dalvik_confirm">Cache &amp; Dalvik löschen?</string>
-		<string name="wipe_dalvik_confirm">Dalvik löschen?</string>
 		<string name="wiping_cache_dalvik">Lösche Cache &amp; Dalvik...</string>
 		<string name="wipe_cache_dalvik_complete">Cache &amp; Dalvik gelöscht</string>
-		<string name="wipe_dalvik_complete">Dalvik gelöscht</string>
 		<string name="swipe_wipe">Löschen bestätigen</string>
 		<string name="swipe_wipe_s">Löschen</string>
 		<string name="no_os1">Kein OS installiert! Sind Sie</string>
@@ -126,10 +122,6 @@
 		<string name="reboot_install_app_system">Als System-App installieren</string>
 		<string name="reboot_installing_app">Installiere App...</string>
 		<string name="swipe_to_install_app">TWRP App installieren</string>
-		<string name="uninstall_twrp_system_app">Deinstalliere TWRP App vom System</string>
-		<string name="uninstall_twrp_system_app_confirm">TWRP App vom System deinstallieren?</string>
-		<string name="uninstalling_twrp_system_app">Deinstalliere TWRP App vom System...</string>
-		<string name="uninstall_twrp_system_app_complete">Deinstallationder TWRP App vom System abgeschlossen</string>
 		<string name="swipe_flash">Installation bestätigen</string>
 		<string name="confirm_action">Aktion bestätigen</string>
 		<string name="back_cancel">Zurück-Taste drücken, um den Vorgang abzubrechen.</string>
@@ -141,14 +133,13 @@
 		<string name="factory_reset2">(ohne internen Speicher)</string>
 		<string name="factory_reset3">Diese Lösch-Aktion ist in der Regel</string>
 		<string name="factory_reset4">die einzige die benötigt wird.</string>
-		<string name="factory_reset5">(beinhaltet nicht die Benutzer und den Sperrbildschirm)</string>
 		<string name="factory_resetting">Werkseinstellungen herstellen...</string>
 		<string name="advanced_wipe_hdr">Erweitertes Löschen</string>
 		<string name="advanced_wipe_btn">Erweitertes Löschen</string>
 		<string name="wipe_enc_confirm">Verschlüsselung der Daten-Partition enfernen?</string>
 		<string name="formatting_data">Data wird formatiert...</string>
 		<string name="swipe_format_data">Daten-Partition formatieren</string>
-		<string name="swipe_format_data_s">Formatieren</string>
+		<string name="swipe_format_data_s">Formatieren </string>
 		<string name="factory_reset_complete">Werkseinstellungen wiederhergestellt</string>
 		<string name="sel_part_hdr">Partitionen auswählen</string>
 		<string name="wipe_sel_confirm">Ausgewählte Partition(en) löschen?</string>
@@ -292,7 +283,7 @@
 		<string name="rb_recovery_btn">Recovery</string>
 		<string name="rb_bootloader_btn">Bootloader</string>
 		<string name="rb_download_btn">Download</string>
-		<string name="rb_edl_btn">EDL</string>
+		<string name="rb_edl_btn">Edl</string>
 		<string name="turning_off">Ausschalten...</string>
 		<string name="swipe_power_off">Gerät ausschalten</string>
 		<string name="swipe_power_off_s">Ausschalten</string>
@@ -327,7 +318,6 @@
 		<string name="settings_tz_btn">Zeitzone</string>
 		<string name="settings_screen_btn">Bildschirm</string>
 		<string name="settings_screen_bright_btn">Helligkeit</string>
-		<string name="vibration_disabled">Vibration ist auf diesen Gerät ausgeschalten</string>
 		<string name="settings_vibration_btn">Vibration</string>
 		<string name="settings_language_btn">Sprache</string>
 		<string name="time_zone_hdr">Zeitzone</string>
@@ -397,6 +387,7 @@
 		<string name="language_hdr">Sprache</string>
 		<string name="terminal_btn">Terminal</string>
 		<string name="reload_theme_btn">Theme neu laden</string>
+		<string name="dumlock_btn">HTC Dumlock</string>
 		<string name="inject_twrp_btn">TWRP injizieren</string>
 		<string name="inject_twrp_confirm">TWRP wieder injizieren?</string>
 		<string name="injecting_twrp">TWRP wird wieder injiziert...</string>
@@ -416,6 +407,19 @@
 		<string name="partitioning_sd">Partitioniere SD-Karte...</string>
 		<string name="partitioning_sd2">Dies wird einige Minuten dauern.</string>
 		<string name="part_sd_complete">Partitionierung abgeschlossen</string>
+		<string name="dumlock_hdr">HTC Dumlock</string>
+		<string name="dumlock_restore_btn">Orginale Boot-Partition wiederherstellen</string>
+		<string name="dumlock_restore_confirm">Orginales Image der Boot-Partition wiederherstellen?</string>
+		<string name="dumlock_restoring">Stelle originale Boot-Partition wieder her...</string>
+		<string name="dumlock_restore_complete">Wiederherstellen der orginalen Boot-Partition abgeschlossen</string>
+		<string name="dumlock_reflash_btn">Recovery erneut einspielen</string>
+		<string name="dumlock_reflash_confirm">Recovery in Boot-Partition einspielen?</string>
+		<string name="dumlock_reflashing">Spiele Recovery in Boot-Partition ein...</string>
+		<string name="dumlock_reflash_complete">Einspielen der Recovery in die Boot-Partition abgeschlossen</string>
+		<string name="dumlock_install_btn">HTC Dumlock installieren</string>
+		<string name="dumlock_install_confirm">HTC Dumlock Dateien ins ROM installieren?</string>
+		<string name="dumlock_installing">Installiere HTC Dumlock...</string>
+		<string name="dumlock_install_complete">HTC Dumlock Installation abgeschlossen</string>
 		<string name="swipe_to_unlock">Bildschirm entsperren</string>
 		<string name="swipe_unlock">Entsperren</string>
 		<string name="fm_hdr">Dateimanager</string>
@@ -451,7 +455,6 @@
 		<string name="decrypt_data_failed_pattern">Muster falsch, bitte erneut versuchen!</string>
 		<string name="decrypt_data_enter_pattern">Muster eingeben.</string>
 		<string name="decrypt_data_trying">Versuche Entschlüsselung</string>
-		<string name="decrypt_data_vold_os_missing">Fehlende Dateien für vold Entschlüsselung werden benötigt: {1}</string>
 		<string name="term_hdr">Terminal</string>
 		<string name="term_s_hdr">Terminal</string>
 		<string name="term_kill_btn">BEENDEN</string>
@@ -476,37 +479,6 @@
 		<string name="install_cancel">Nicht installieren</string>
 		<string name="sel_storage_list">Speicher auswählen</string>
 		<string name="ok_btn">OK</string>
-		<string name="install_twrp_ramdisk">Installiere Recovery Ramdisk</string>
-		<string name="install_kernel">Kernel installieren</string>
-		<string name="repack_kernel_confirm_hdr">Kernel installieren</string>
-		<string name="repack_ramdisk_confirm_hdr">Recovery installieren</string>
-		<string name="repack_kernel_confirm">Kernel installieren?</string>
-		<string name="repack_ramdisk_confirm">Recovery installieren?</string>
-		<string name="repack_backup_first">Sichern des existierenden Images zu Beginn</string>
-		<string name="repack">Packen</string>
-		<string name="swipe_to_install">Installieren</string>
-		<string name="installing">Installiere...</string>
-		<string name="install_complete">Installation abgeschlossen</string>
-		<string name="unpack_error">Fehler beim Entpacken des Images.</string>
-		<string name="repack_error">Fehler beim Packen des Images.</string>
-		<string name="unpacking_image">Entpacke {1}...</string>
-		<string name="repacking_image">Packen {1}...</string>
-		<string name="repack_image_hdr">Wähle ein Image</string>
-		<string name="fix_recovery_loop">Recovery Bootloop reparieren</string>
-		<string name="fix_recovery_loop_confirm">Recovery Bootloop reparieren?</string>
-		<string name="fixing_recovery_loop">Recovery Bootloop wird repariert...</string>
-		<string name="fix_recovery_loop_complete">Recovery Bootloop Reparatur abgeschlossen</string>
-		<string name="fixing_recovery_loop_patch">Patche Kernel...</string>
-		<string name="fix_recovery_loop_patch_error">Fehler beim Patchen des Kernels.</string>
-		<string name="decrypt_users">Benutzer entschlüsseln</string>
-		<string name="decrypt_users_selection">Wähle eine Benutzer ID zum entschlüsseln</string>
-		<string name="select_user">Benutzer wählen</string>
-		<string name="backup_storage_undecrypt_warning">Das Backup enthält manche Dateien des Benutzers {1} nicht, da dieser nicht verschlüsselt ist</string>
-		<string name="decrypting_user_fbe">Entschlüsselung des FBE von Benutzer {1}...</string>
-		<string name="decrypt_user_success_fbe">Entschlüsselung des Benutzers {1} erfolgreich</string>
-		<string name="decrypt_user_fail_fbe">Entschlüsselung des Benutzers {1} fehlgeschlagen</string>
-		<string name="decrypt_data_enter_pass_fbe">Passwort für Benutzer [%tw_crypto_user_id%] eingeben</string>
-		<string name="decrypt_data_enter_pattern_fbe">Muster für Benutzer [%tw_crypto_user_id%] eingeben</string>
 
 		<!-- Various console messages - these consist of user displayed messages, oftentimes errors -->
 		<string name="no_kernel_selinux">Dieser Kernel hat keine Leseunterstützung für SELinux-Kontexte.</string>
@@ -560,8 +532,7 @@
 		<string name="update_part_details_done">...Fertig</string>
 		<string name="wiping_dalvik">Dalvik Cache-Verzeichnisse bereinigen...</string>
 		<string name="cleaned">Bereinigt: {1}...</string>
-		<string name="cache_dalvik_done">-- Dalvik Cache-Verzeichnisse bereinigt!</string>
-		<string name="dalvik_done">-- Dalvik-Verzeichnis bereinigt!</string>
+		<string name="dalvik_done">-- Dalvik Cache-Verzeichnisse bereinigt!</string>
 		<string name="no_andsec">Keine "Android Secure"-Partitionen gefunden.</string>
 		<string name="unable_to_locate">{1} nicht gefunden.</string>
 		<string name="wiping_datamedia">Lösche internen Speicher -- /data/media...</string>
@@ -649,7 +620,7 @@
 		<string name="done_ors">Skript wurde verarbeitet</string>
 		<string name="injecttwrp">Injiziere TWRP in das Boot-Image...</string>
 		<string name="zip_err">Fehler beim Installieren von ZIP '{1}'</string>
-		<string name="installing_zip">Installiere ZIP '{1}'</string>
+		<string name="installing_zip">Installiere Zip '{1}'</string>
 		<string name="select_backup_opt">Setze Sicherungs-Optionen:</string>
 		<string name="compression_on">Komprimierung ist aktiviert</string>
 		<string name="digest_off" version="2">Digest-Generierung ist deaktiviert</string>
@@ -659,7 +630,7 @@
 		<string name="recovery_commands_complete">Recovery-Befehle ausgeführt</string>
 		<string name="running_ors">Führe OpenRecoveryScript aus</string>
 		<string name="ors_complete">OpenRecoveryScript ausgeführt</string>
-		<string name="invalid_zip_format">Invalides ZIP-Datei Format!</string>
+		<string name="invalid_zip_format">Invalid zip file format!</string>
 		<string name="check_for_digest" version="2">Suche nach Digest-Datei...</string>
 		<string name="fail_sysmap">'{1}' kann nicht zugeordnet werden</string>
 		<string name="verify_zip_sig">Überprüfe ZIP-Signatur...</string>
@@ -671,6 +642,9 @@
 		<string name="digest_match" version="2">Digest stimmt überein</string>
 		<string name="pid_signal">Prozess {1} endete mit Meldung: {2}</string>
 		<string name="pid_error">Prozess {1} endete mit FEHLER: {2}</string>
+		<string name="install_dumlock">Installiere HTC Dumlock in System-Partition...</string>
+		<string name="dumlock_restore">Stelle originale Boot-Partition wieder her...</string>
+		<string name="dumlock_reflash">Recovery auf Boot-Partition einspielen...</string>
 		<string name="run_script">Führe {1}-Skript aus...</string>
 		<string name="rename_stock">Hersteller-Recovery in "/system" wurde umbenannt, damit das Hersteller-ROM TWRP nicht überschreibt.</string>
 		<string name="split_backup">Sicherungs-Datei wird in mehrere Archive aufgeteilt...</string>
@@ -710,14 +684,248 @@
 		<string name="partition_not_found">Pfad: {1} wurde nicht in Partitionsliste gefunden</string>
 		<string name="copy_kernel_log">Kernel-Log wurde nach {1} kopiert</string>
 		<string name="include_kernel_log">Zusätzlich Kernel-Log kopieren</string>
-		<string name="sha2_chk">SHA2 als Hash-Algorithmus verwenden</string>
 		<string name="unable_set_boot_slot">Fehler während Wechsel zu Slot {1}</string>
-		<string name="unmount_sys_install">Aushängen der System-Partition vor der Installation einer ZIP-Datei.</string>
-		<string name="unmount_system">Aushängen der System-Partiton...</string>
-		<string name="unmount_system_err">Aushängen der System-Partition fehlgeschlagen</string>
-		<string name="flash_ab_inactive">Einspielen des A/B ZIPs auf den inaktiven Slot: {1}</string>
-		<string name="flash_ab_reboot">Um weitere ZIP-Dateien einzuspielen bitte das Recovery neustartet um auf den geänderten Slot zu wechseln.</string>
-		<string name="ozip_decrypt_decryption">Starte Ozip Entschlüsselung...</string>
-		<string name="ozip_decrypt_finish">Ozip Entschlüsselung abgeschlossen!</string>
+		<string name="show_free_sdmb">Show Free SD Mb</string>
+		
+		<!-- PBRP Auto-Translated Strings START -->
+
+		<string name="autostorage">Lager</string>
+		<string name="copy_log_btn1">Generieren Sie Protokolle auf SD-Karte</string>
+		<string name="adb_sideload_btn1">Installieren Sie Ihre Pakete über ADB</string>
+		<string name="zip_compatible_err">Zip Treble-Kompatibilitätsfehler!</string>
+		<string name="wipe_dalvik_btn">Wischen Sie Dalvik ab</string>
+		<string name="reboot_recovery_btn">Neustart Erholung</string>
+		<string name="wipe_dalvik_confirm">Dalvik abwischen?</string>
+		<string name="wipe_dalvik_complete">Dalvik Wipe abgeschlossen</string>
+		<string name="reset">Zurücksetzen</string>
+		<string name="factory_reset5">(ohne Benutzer / Sperrbildschirm)</string>
+		<string name="part_present">Geschenk:</string>
+		<string name="part_removable">Abnehmbar:</string>
+		<string name="destination_storage">Zielspeicher</string>
+		<string name="check_digest_after_backup">Überprüfen Sie Digest nach dem Backup</string>
+		<string name="disable_backup_space_chk" version="2">Deaktivieren Sie die Überprüfung des freien Speicherplatzes vor der Sicherung</string>
+		<string name="backup_options">Sicherungsoptionen</string>
+		<string name="rb_recovery_btn1">Starten Sie zur Wiederherstellung neu</string>
+		<string name="rb_bootloader_btn1">Starten Sie den Bootloader neu</string>
+		<string name="vibration_disabled">Die Vibration ist für dieses Gerät deaktiviert</string>
+		<string name="copying_log" version="2">Protokolle auf SD-Karte kopieren</string>
+		<string name="copy_log_complete" version="2">Protokollkopie abgeschlossen</string>
+		<string name="fix_context_btn1">Korrigieren Sie SELinux-Kontexte</string>
+		<string name="part_sd_btn1">Partitionieren Sie Ihre SD-Karte / Ihren internen Speicher</string>
+		<string name="file_manager_btn1">Verwalten Sie Ihre Dateien und Ordner auf Ihrem Gerät</string>
+		<string name="terminal_btn1">Startet die erhöhte Terminalkonsole</string>
+		<string name="reload_theme_btn1">Laden Sie das Wiederherstellungsthema neu, wenn Probleme auftreten</string>
+		<string name="dumlock_hdr1">Flashen Sie den Start Ihres HTC nach der Wiederherstellung</string>
+		<string name="fm_open_file_btn">Datei lesen</string>
+		<string name="fm_reading">lesen</string>
+		<string name="fm_unzipping">Entpacken</string>
+		<string name="fm_zipping">Reißverschluss</string>
+		<string name="fm_unzip_btn">Entpacken</string>
+		<string name="fm_zip_btn">Postleitzahl</string>
+		<string name="pb_zip_name">Reißverschluss</string>
+		<string name="decrypt_data_vold_os_missing">Fehlende Dateien für die Vold-Entschlüsselung erforderlich: {1}</string>
+		<string name="install_twrp_ramdisk">Installieren Sie Recovery Ramdisk</string>
+		<string name="install_twrp_ramdisk1">Flash Recovery Ramdisk (nur A / B)</string>
+		<string name="install_kernel">Installieren Sie den Kernel</string>
+		<string name="repack_kernel_confirm_hdr">Installieren Sie den Kernel</string>
+		<string name="repack_kernel_confirm_hdr1">Benutzerdefinierter Flash-Kernel (nur A / B)</string>
+		<string name="repack_ramdisk_confirm_hdr">Installieren Sie die Wiederherstellung</string>
+		<string name="repack_kernel_confirm">Kernel installieren?</string>
+		<string name="repack_ramdisk_confirm">Wiederherstellung installieren?</string>
+		<string name="repack_backup_first">Sichern Sie zuerst das vorhandene Image</string>
+		<string name="repack">Umpacken</string>
+		<string name="swipe_to_install">Wischen Sie zur Installation</string>
+		<string name="installing">Installieren ...</string>
+		<string name="install_complete">Installation abgeschlossen</string>
+		<string name="unpack_error">Fehler beim Entpacken des Bildes.</string>
+		<string name="repack_error">Fehler beim Umpacken des Bildes.</string>
+		<string name="unpacking_image">{1} auspacken ...</string>
+		<string name="repacking_image">Umpacken von {1} ...</string>
+		<string name="repack_image_hdr">Bild auswählen</string>
+		<string name="fix_recovery_loop">Behebung des Wiederherstellungs-Bootloops</string>
+		<string name="fix_recovery_loop1">Problemumgehung zum Beheben der Wiederherstellung nach dem Neustart</string>
+		<string name="fix_recovery_loop_confirm">Wiederherstellungs-Bootloop reparieren?</string>
+		<string name="fixing_recovery_loop">Behebung des Wiederherstellungs-Bootloops ...</string>
+		<string name="fix_recovery_loop_complete">Fix Recovery Bootloop abgeschlossen</string>
+		<string name="fixing_recovery_loop_patch">Patching Kernel ...</string>
+		<string name="fix_recovery_loop_patch_error">Fehler beim Patchen des Kernels.</string>
+		<string name="decrypt_users">Benutzer entschlüsseln</string>
+		<string name="decrypt_users1">Mehrbenutzerentschlüsselung</string>
+		<string name="decrypt_users_selection">Wählen Sie eine Benutzer-ID zum Entschlüsseln aus</string>
+		<string name="select_user">Nutzer wählen</string>
+		<string name="backup_storage_undecrypt_warning">Die Sicherung enthält einige Dateien des Benutzers {1} nicht, da der Benutzer nicht entschlüsselt ist.</string>
+		<string name="decrypting_user_fbe">Versuch, FBE für Benutzer {1} zu entschlüsseln ...</string>
+		<string name="decrypt_user_success_fbe">Benutzer {1} erfolgreich entschlüsselt</string>
+		<string name="decrypt_user_fail_fbe">Benutzer {1} konnte nicht entschlüsselt werden</string>
+		<string name="decrypt_data_enter_pass_fbe">Passwort für Benutzer eingeben [%tw_crypto_user_id%]</string>
+		<string name="decrypt_data_enter_pattern_fbe">Muster für Benutzer eingeben [%tw_crypto_user_id%]</string>
+		<string name="cache_dalvik_done">- Löschen der Dalvik-Cache-Verzeichnisse abgeschlossen!</string>
+		<string name="decrypt_cmd" version="2">Versuch, Datenpartition oder Benutzerdaten über die Befehlszeile zu entschlüsseln.</string>
+		<string name="install_reboot" version="2">Neustart in %tw_sleep% second (s)</string>
+		<string name="pb_flashed">* Neues PBRP geflasht, drücken Sie Volume {1}</string>
+		<string name="pb_flashed_">* Magisk Patched Ramdisk erkannt !!!</string>
+		<string name="pb_rb_msg">* Volume {1} zum Beenden</string>
+		<string name="copy_logcat_log">Kopiertes Logcat-Protokoll nach {1}</string>
+		<string name="include_logcat_log">Logcat-Protokoll einschließen</string>
+		<string name="sha2_chk">Verwenden Sie SHA2 zum Hashing</string>
+		<string name="device_ab">A / B-Geräteeinstellungen</string>
+		<string name="flash_ab_inactive">Blinkende A / B-Zip zum inaktiven Steckplatz: {1}</string>
+		<string name="flash_ab_reboot">Um zusätzliche Zips zu flashen, starten Sie die Wiederherstellung neu, um zum aktualisierten Steckplatz zu wechseln.</string>
+		<string name="ozip_decrypt_decryption">Starten der Ozip-Entschlüsselung ...</string>
+		<string name="ozip_decrypt_finish">Ozip-Entschlüsselung abgeschlossen!</string>
+		<string name="additional_hdr">Zusätzlich</string>
+		<string name="additional">Zusätzlich</string>
+		<string name="tools_hdr">Werkzeug-Optionen</string>
+		<string name="tools">Werkzeug-Optionen</string>
+		<string name="tools1">Werkzeuge</string>
+		<string name="Magisk_btn">Magisch</string>
+		<string name="Magisk_text">Magisk wird installiert.</string>
+		<string name="Magisk_confirm">Versuchen Sie es zu installieren?</string>
+		<string name="Unroot_Magisk_btn">Unroot Magic</string>
+		<string name="Unroot_Magisk_text">Unroot Magisk wird installiert.</string>
+		<string name="Unroot_Magisk_confirm">Versuchen Sie es zu installieren?</string>
+		<string name="Aroma_FM_btn">Aroma FM</string>
+		<string name="Aroma_FM_text">Aroma FM wird installiert.</string>
+		<string name="Aroma_FM_confirm">Versuchen Sie es zu installieren?</string>
+		<string name="FP_Scanner_btn">FP-Scanner</string>
+		<string name="FP_Scanner_text">Der FP-Scanner wird installiert.</string>
+		<string name="FP_Scanner_confirm">Versuchen Sie es zu installieren?</string>
+		<string name="Pin/Pass_Remover_btn">Pin / Pass-Entferner</string>
+		<string name="Pin/Pass_Remover_text">Pin / Pass Remover wird installiert.</string>
+		<string name="Pin/Pass_Remover_confirm">Versuchen Sie es zu installieren?</string>
+		<string name="RM_Subs_Overlays_btn">RM-Overlays</string>
+		<string name="RM_Subs_Overlays_text">RM Subs Overlays werden installiert.</string>
+		<string name="RM_Subs_Overlays_confirm">Versuchen Sie es zu installieren?</string>
+		<string name="RM_All_Subs_Overlays_btn">RM Alle Überlagerungen</string>
+		<string name="RM_All_Subs_Overlays_text">RM Alle Subs-Overlays werden installiert.</string>
+		<string name="RM_All_Subs_Overlays_confirm">Versuchen Sie es zu installieren?</string>
+		<string name="Camera2API_Enabler_btn">Camera2API Enabler</string>
+		<string name="Camera2API_Enabler_text">Camera2API Enabler wird installiert.</string>
+		<string name="Camera2API_Enabler_confirm">Versuchen Sie es zu installieren?</string>
+		<string name="App_Delete_btn">App Delete</string>
+		<string name="App_Delete_text">App Delete wird installiert.</string>
+		<string name="App_Delete_confirm">Versuchen Sie es zu installieren?</string>
+		<string name="MTP_Fix_btn">MTP Fix</string>
+		<string name="MTP_Fix_text">MTP Fix wird installiert.</string>
+		<string name="MTP_Fix_confirm">Versuchen Sie es zu installieren?</string>
+		<string name="MMR_btn">Magic Manager</string>
+		<string name="MMR_text">Magisk Manager Recovery wird installiert.</string>
+		<string name="MMR_confirm">Versuchen Sie es zu installieren?</string>
+		<string name="Dm_Verity_btn">Dm Verity</string>
+		<string name="Dm_Verity_text">Dm Verity wird installiert.</string>
+		<string name="Dm_Verity_confirm">Versuchen Sie es zu installieren?</string>
+		<string name="use_aromafm">Verwenden Sie den Aroma File Manager</string>
+		<string name="pbthemes">Themen</string>
+		<string name="pbthemes_hdr">Themen</string>
+		<string name="special">Besondere</string>
+		<string name="special_hdr">Besondere</string>
+		<string name="about_pbrp">Über PBRP</string>
+		<string name="device_info">Geräteinformation</string>
+		<string name="device_maintainer">Gerätewartung</string>
+		<string name="thanksto">Dank an</string>
+		<string name="toolscr">Tools Kredit</string>
+		<string name="contributors">Mitwirkende</string>
+		<string name="contributors1">Mitwirkende und Patreon</string>
+		<string name="SETTING">Spezielle Einstellungen</string>
+		<string name="SETTINGOTA">OTA-Einstellungen</string>
+		<string name="device_name">Gerätename:    %pb_device_manufacturer%%pb_device_name%</string>
+		<string name="device_codename">Geräte-Codename:    %pb_device%</string>
+		<string name="build_date">Erstellungsdatum:    %pb_build%</string>
+		<string name="pb_version">PitchBlack Version  :    %pb_ver%</string>
+		<string name="device_maintainer1">Geräteverwalter:    %pb_maintainer%</string>
+		<string name="core_contributors">Hauptakteure</string>
+		<string name="miscellaneous">Verschiedenes</string>
+		<string name="pbrpspecial_btn">PBRP Specials</string>
+		<string name="install_txt">Willst du Änderungen hinzufügen</string>
+		<string name="install2_txt">in Form von Reißverschlüssen oder Img</string>
+		<string name="wipe_txt">Lassen Sie die Ihres Geräts los</string>
+		<string name="wipe2_txt">Stress</string>
+		<string name="backup_txt">Rette dein Kostbares</string>
+		<string name="backup2_txt">Edelsteine ​​an einem sichereren Ort</string>
+		<string name="restore_txt">Holen Sie sich Ihr Precious zurück</string>
+		<string name="restore2_txt">Edelsteine. Hast du gespart?</string>
+		<string name="mount_txt">Holen Sie sich Ihr Gerät</string>
+		<string name="mount2_txt">Partitionen montiert</string>
+		<string name="advanced_txt">Diese Seite ist nicht genug</string>
+		<string name="advanced2_txt">für dich? Wechseln zu</string>
+		<string name="settings_txt">Passen Sie PitchBlack Recovery an!</string>
+		<string name="customizations">Anpassungen</string>
+		<string name="themes_txt">Themen</string>
+		<string name="bg_color">Hintergrundfarbe</string>
+		<string name="font_options">Schriftoptionen</string>
+		<string name="features_txt">Eigenschaften</string>
+		<string name="logs_btn">OPEN CONSOLE</string>
+		<string name="pb_support_miui_ota_chk">Unterstützt MIUI Incremental OTA</string>
+		<string name="pb_incremental_ota_status_enabled">Unterstützung MIUI Inkrementeller Paketstatus: Aktiviert</string>
+		<string name="pb_incremental_ota_status_disabled">Unterstützung MIUI Inkrementeller Paketstatus: Deaktiviert</string>
+		<string name="pb_incremental_package_detected">Inkrementelles Paket '{1}' erkannt</string>
+		<string name="pb_survival_does_not_exist">OTA Survival gibt es nicht! Bitte flashen Sie zuerst ein vollständiges ROM!</string>
+		<string name="pb_install_detecting">Aktuelles Paket erkennen</string>
+		<string name="pb_install_standard_detected">- Erkanntes Standardpaket</string>
+		<string name="pb_install_miui_detected">- MIUI-Update-Paket erkannt</string>
+		<string name="pb_install_miui_oreo_detected">- Erkanntes dreifaches MIUI-Aktualisierungspaket</string>
+		<string name="pb_install_miui_10_detected">- MIUI 10 Non-Treble-Update-Paket erkannt</string>
+		<string name="pb_install_patch_detected">- Entweder ein Patch- oder ein Fixpaket erkannt</string>
+		<string name="pb_disable_boot_chk">Deaktivieren Sie die Startprüfung</string>
+		<string name="pb_include_system_survival_chk">System in das OTA-Überleben einbeziehen</string>
+		<string name="pb_verify_incremental_ota_signature_chk">Inkrementelle Überprüfung der OTA-Signatur</string>
+		<string name="pb_incremental_ota_compatibility_chk">Überprüfen der inkrementellen Paketsignatur ...</string>
+		<string name="pb_incremental_ota_compatibility_false">Inkrementelles Paket ist nicht mit diesem ROM kompatibel!</string>
+		<string name="pb_incremental_ota_compatibility_true">Inkrementelles Paket ist kompatibel</string>
+		<string name="pb_zip_have_bootloader">Warnung: Neuinstallation des Bootloaders festgestellt, der von '{1}' aufgerufen wurde.</string>
+		<string name="pb_no_space_ota_survival">Nicht genügend freier Speicherplatz im internen Speicher, um das OTA-Überleben zu sichern.</string>
+		<string name="exp">Explorer-Optionen</string>
+		<string name="pb_incremental_ota_res">OTA_RES - fertig!</string>
+		<string name="pb_incremental_ota_res_run">OTA_RES-Prozess ausführen ...</string>
+		<string name="pb_incremental_ota_bak_run">OTA_BAK-Prozess ausführen ...</string>
+		<string name="pb_incremental_ota_bak">OTA_BAK - fertig!</string>
+		<string name="pb_advanced_stock_recovery">Deaktivierung der aggressiven Bestandserholung</string>
+		<string name="pb_reboot_dont_disable_stock_recovery_chk">Deaktivieren Sie nicht das Ersetzen der Lagerwiederherstellung</string>
+		<string name="pb_dmverity_chk">Deaktivierung (Patch DM-Verity)</string>
+		<string name="pb_for_en_chk">Erweitern Sie die erzwungene Verschlüsselung</string>
+		<string name="pb_forced_encryption_chk">Deaktivieren Sie die erzwungene Verschlüsselung</string>
+		<string name="pb_disable_reboot_ota_check">Deaktivieren Sie den Neustart nach OTA</string>
+		<string name="pb_run_process">Starten des Prozesses '{1}'</string>
+		<string name="pb_encrypt_cn">Details zur Mehrfachverschlüsselung zwischengespeichert</string>
+		<string name="pb_encrypt_st">Verschlüsselungsstatus: {1}</string>
+		<string name="pb_run_process_fail">Prozess '{1}' kann nicht beendet werden</string>
+		<string name="fm_pb_make">Ordner erstellen</string>
+		<string name="fm_pb_mk">Ordner erstellen</string>
+		<string name="pb_run_process_done">'{1}' Prozess abgeschlossen</string>
+		<string name="pb_encryption">Erzwungene Verschlüsselung erfolgreich gepatcht</string>
+		<string name="pb_ecryption_leave">Gerät verschlüsselt Forceencrypt verlassen</string>
+		<string name="pb_encryption_off">Die erzwungene Verschlüsselung ist nicht aktiviert</string>
+		<string name="pb_fstab">Erkannter fstab: '{1}'</string>
+		<string name="pb_unlink">Aufheben der Verknüpfung: '{1}'</string>
+		<string name="pb_patching">Patchen: '{1}'</string>
+		<string name="pb_end_read">Beendeter Prozess Lesen {1}</string>
+		<string name="pb_start_read">Prozess gestartet Lesen {1}</string>
+		<string name="pb_dm_verity">DM-Verity erfolgreich gepatcht</string>
+		<string name="pb_dm_verity_off">DM-Verity ist nicht aktiviert</string>
+		<string name="pb_bk">Erstellen einer Sicherung von PB-Dateien - / tmp / pb / backup_wip ...</string>
+		<string name="pb_bk_no">Keine Tools von PBRP erkennen das PBRP-Paket erneut</string>
+		<string name="zip_err_compatibility">Bipass-Höhenkompatibilität</string>
+		<string name="pb_wipe_substratum_overlays">Substratüberlagerungen</string>
+		<string name="substratum_done">- Substratüberlagerungen abwischen abgeschlossen!</string>
+		<string name="assert_failed_hint">Eine Behauptung ist fehlgeschlagen. Bitte überprüfen Sie die Ausgabe oben für weitere Details.</string>
+		<string name="pb_wipe_magisk_modules">Magische Module</string>
+		<string name="magisk_done">- Magisk Module Wipe Complete!</string>
+		<string name="pb_saving_log">Protokolle aufbewahren ...</string>
+		<string name="pb_enable_dmesg_logging">Aktivieren Sie die Dmesg-Protokollierung nach Flash</string>
+		<string name="pb_copy_log_cache">Kopieren von Protokollen in den Cache.</string>
+		<string name="pb_dev_name_change">Möchten Sie den Codenamen Ihres Geräts ändern?</string>
+		<string name="img">IMG</string>
+		<string name="zip">POSTLEITZAHL</string>
+		<string name="pb_dev_change">Ändern des Geräte-Codenamens von %pb_prop_value% in %pb_codename_change%</string>
+		<string name="pb_dev_changed">Geräte-Codename geändert in %pb_codename_change%</string>
+		<string name="pb_dev_reboot">Ein Neustart ist nach dem Wechseln der Codenamen obligatorisch</string>
+		<string name="pb_dev_name">PBRP Device Codename Changer</string>
+		<string name="codename_changer">Codename Changer</string>
+		<string name="sel_br_val">Helligkeitswert der Taschenlampe: %pb_bright_value%%</string>
+		<string name="unmount_sys_install">Hängen Sie das System aus, bevor Sie eine ZIP-Datei installieren</string>
+		<string name="unmount_system">System aushängen ...</string>
+		<string name="unmount_system_err">Fehler beim Aushängen des Systems</string>
+		
+		<!-- PBRP Auto-Translated Strings END -->
 	</resources>
 </language>

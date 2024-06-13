@@ -4,10 +4,10 @@
 	<display>Swedish</display>
 	<resources>
 		<!-- Font overrides - only change these if your language requires special characters -->
-		<resource name="font_l" type="fontoverride" filename="RobotoCondensed-Regular.ttf" scale="90" />
-		<resource name="font_m" type="fontoverride" filename="RobotoCondensed-Regular.ttf" scale="90" />
-		<resource name="font_s" type="fontoverride" filename="RobotoCondensed-Regular.ttf" scale="90" />
-		<resource name="fixed" type="fontoverride" filename="DroidSansMono.ttf" scale="100" />
+		<resource name="font_l" type="fontoverride" filename="pb.ttf" scale="90" />
+		<resource name="font_m" type="fontoverride" filename="pb.ttf" scale="90" />
+		<resource name="font_s" type="fontoverride" filename="pb.ttf" scale="90" />
+		<resource name="fixed" type="fontoverride" filename="pb.ttf" scale="100" />
 
 		<string name="system">System</string>
 		<string name="vendor">Leverantör</string>
@@ -101,7 +101,7 @@
 		<string name="rb_system_btn">System</string>
 		<string name="rb_bootloader_btn">Bootloader</string>
 		<string name="rb_download_btn">Ladda ner</string>
-		<string name="rb_edl_btn">EDL</string>
+		<string name="rb_edl_btn">Edl</string>
 		<string name="turning_off">Stänger av...</string>
 		<string name="settings_hdr">Inställningar</string>
 		<string name="settings_gen_s_hdr">Allmänt</string>
@@ -141,11 +141,15 @@
 		<string name="file_manager_btn">Filhanterare</string>
 		<string name="language_hdr">Språk</string>
 		<string name="terminal_btn">Terminal</string>
+		<string name="dumlock_btn">HTC Dumlock</string>
 		<string name="inject_twrp_btn">Injicera TWRP</string>
 		<string name="part_sd_m">-</string>
 		<string name="part_sd_p">+</string>
 		<string name="file_system">Filsystem:</string>
 		<string name="swipe_part_sd_s">Partition</string>
+		<string name="dumlock_hdr">HTC Dumlock</string>
+		<string name="dumlock_install_btn">Installera HTC Dumlock</string>
+		<string name="dumlock_installing">Installerar HTC Dumlock...</string>
 		<string name="swipe_unlock">   Lås upp</string>
 		<string name="fm_hdr">Filhanterare</string>
 		<string name="fm_type_folder">Mapp</string>
@@ -195,5 +199,6 @@
 		<string name="config_twrp">Konfigurerar TWRP...</string>
 		<string name="auto_gen">(Auto-generera)</string>
 		<string name="curr_date">(Dagens datum)</string>
+		<string name="show_free_sdmb">Show Free SD Mb</string>
 	</resources>
 </language>
